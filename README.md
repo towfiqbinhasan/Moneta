@@ -182,9 +182,13 @@ Things that work differently in the phone app:
 5. For an installable file, use **Build → Build APK(s)**. For the Play Store, use **Build → Generate Signed App Bundle**.
 
 **Option B: GitHub Actions (no local setup)**
-1. Push to GitHub and add the three `VITE_*` values as repository secrets.
-2. The **Android APK** workflow (`.github/workflows/android.yml`) builds `app-debug.apk` on every push to `main`.
-3. Download it from the run's **Artifacts** section and install it on your phone.
+1. Add these repository secrets (**Settings → Secrets and variables → Actions**):
+   - `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`: needed for sign-in in the app.
+   - `VITE_SITE_URL`: your Vercel URL, used in e-mail links.
+   - `ANDROID_KEYSTORE_B64` and `MONETA_KEYSTORE_PASSWORD`: the permanent signing key. Without it, each build gets a new key and Android refuses to install it over the old one.
+2. Every push to `main` builds the APK and publishes it on the repo's **Releases** page as `Moneta.apk`. Open that page on the phone, download, and install.
+
+The signing key lives only on your computer in `android/moneta.keystore`, with the password in `android/keystore.properties`; git ignores both. **Back them up somewhere safe.** If you lose them, future APKs can't update the installed app.
 
 After changing the web code, run `npm run app:sync` to update the native app.
 

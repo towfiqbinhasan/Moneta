@@ -1,5 +1,6 @@
 # Builds an installable Android APK on every push to main (or by hand from the
-# Actions tab). Download it from the run's "Artifacts" section.
+# Actions tab) and publishes it as a GitHub Release, so the phone can download
+# Moneta.apk straight from the repo's "Releases" page.
 # Add repository secrets VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY and VITE_SITE_URL
 # (Settings → Secrets and variables → Actions) to enable sign-in in the app.
 name: Android APK
@@ -8,6 +9,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write # create the release
 
 jobs:
   apk:
@@ -36,11 +40,41 @@ jobs:
 
       - run: npx cap sync android
 
+      # With the permanent key (secrets ANDROID_KEYSTORE_B64 + MONETA_KEYSTORE_PASSWORD)
+      # we build a signed release APK that updates in place; without it, a debug APK.
+      - name: Restore signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        if: env.KEYSTORE_B64 != ''
+        run: echo "$KEYSTORE_B64" | base64 -d > android/moneta.keystore
+
       - name: Build APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        env:
+          MONETA_KEYSTORE_PASSWORD: ${{ secrets.MONETA_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -f moneta.keystore ] && [ -n "$MONETA_KEYSTORE_PASSWORD" ]; then
+            ./gradlew assembleRelease --no-daemon
+            cp app/build/outputs/apk/release/app-release.apk ../Moneta.apk
+          else
+            echo "::warning::No signing key secrets - building a debug APK (updates will need a reinstall)."
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/app-debug.apk ../Moneta.apk
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
-          name: moneta-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: moneta-apk
+          path: Moneta.apk
+
+      - name: Publish release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-${{ github.run_number }}
+          name: Moneta for Android (build ${{ github.run_number }})
+          make_latest: true
+          files: Moneta.apk
+          body: |
+            Download **Moneta.apk** below and open it on your phone (allow "Install unknown apps" when asked).
+            Built from ${{ github.sha }}.

@@ -10,3 +10,5 @@ android/app/release/
 *.jks
 ios/App/Pods/
 *.tsbuildinfo
+android/keystore.properties
+android/moneta.keystore.b64

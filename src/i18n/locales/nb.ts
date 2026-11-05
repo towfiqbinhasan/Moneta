@@ -296,6 +296,7 @@ const nb: Record<string, string> = {
   'auth.google': "Fortsett med Google",
   'auth.skip': "Fortsett uten konto",
   'auth.privacy': "Kryptert under overføring · bare du kan lese dataene dine",
+  'auth.googleOff': "Innlogging med Google er ikke slått på ennå. Bruk e-post og passord inntil videre.",
   'dash.noPrevMonth': "Ingen utgifter forrige måned å sammenligne med ennå",
   'auth.notConfirmed': "E-posten din er ikke bekreftet ennå. Åpne lenken vi sendte til innboksen din (sjekk også søppelpost).",
   'auth.resendConfirm': "Send bekreftelses-e-posten på nytt",

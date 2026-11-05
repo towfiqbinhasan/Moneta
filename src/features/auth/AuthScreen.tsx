@@ -6,7 +6,7 @@ import { Aurora, haptic } from '@/components/motion';
 import { Segmented } from '@/components/ui';
 import { cx } from '@/lib/utils';
 import {
-  resendConfirmation, sendPasswordReset, signInWithGoogle, signInWithPassword, signUp, syncEnabled, updatePassword, useSync,
+  authProviders, resendConfirmation, sendPasswordReset, signInWithGoogle, signInWithPassword, signUp, syncEnabled, updatePassword, useSync,
 } from '@/lib/sync';
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'reset';
@@ -29,6 +29,8 @@ export function AuthScreen({ onDone, onSkip, initialMode }: { onDone: () => void
   const [errKey, setErrKey] = useState(0);
   const [notice, setNotice] = useState('');
   const [unconfirmed, setUnconfirmed] = useState(false);
+  const [google, setGoogle] = useState(false);
+  useEffect(() => { authProviders().then((p) => setGoogle(p.google)); }, []);
 
   useEffect(() => { if (sync.recovery) setMode('reset'); }, [sync.recovery]);
   // Signed in (password, OAuth redirect, or confirmed e-mail) → continue.
@@ -45,6 +47,7 @@ export function AuthScreen({ onDone, onSkip, initialMode }: { onDone: () => void
         : /already registered|already exists/i.test(msg) ? t('auth.exists')
         : notConfirmed ? t('auth.notConfirmed')
         : /rate limit|too many/i.test(msg) ? t('auth.rateLimit')
+        : /provider is not enabled|unsupported provider/i.test(msg) ? t('auth.googleOff')
         : msg || t('auth.failed'),
     );
     setErrKey((k) => k + 1);
@@ -167,7 +170,7 @@ export function AuthScreen({ onDone, onSkip, initialMode }: { onDone: () => void
                   </button>
                 </form>
 
-                {(mode === 'signin' || mode === 'signup') && (
+                {google && (mode === 'signin' || mode === 'signup') && (
                   <>
                     <div className="my-5 flex items-center gap-3 text-xs text-muted"><span className="h-px flex-1 bg-line" />{t('auth.or')}<span className="h-px flex-1 bg-line" /></div>
                     <button onClick={() => signInWithGoogle().catch(fail)} className="m-btn m-btn-ghost h-12 w-full border border-line text-[15px]">

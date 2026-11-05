@@ -297,6 +297,7 @@ const en: Record<string, string> = {
   'auth.google': "Continue with Google",
   'auth.skip': "Continue without an account",
   'auth.privacy': "Encrypted in transit · only you can read your data",
+  'auth.googleOff': "Google sign-in isn't switched on yet. Use e-mail and password for now.",
   'dash.noPrevMonth': "No spending last month to compare yet",
   'auth.notConfirmed': "Your e-mail isn't confirmed yet. Open the link we sent to your inbox (check Spam too).",
   'auth.resendConfirm': "Send the confirmation e-mail again",

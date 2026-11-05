@@ -89,6 +89,20 @@ export async function signUp(email: string, password: string, name: string): Pro
   return !data.session;
 }
 
+/**
+ * Which social logins are switched on in the Supabase project, so the app only
+ * shows buttons that work. Cached per session; offline → assume none.
+ */
+let providersP: Promise<{ google: boolean }> | null = null;
+export function authProviders() {
+  if (!syncEnabled) return Promise.resolve({ google: false });
+  providersP ??= fetch(`${URL_}/auth/v1/settings`, { headers: { apikey: KEY! } })
+    .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+    .then((d) => ({ google: !!d?.external?.google }))
+    .catch(() => { providersP = null; return { google: false }; });
+  return providersP;
+}
+
 export async function signInWithGoogle() {
   if (isNative) {
     // Phone app: sign in in the system browser, which hands back via the app's deep link.

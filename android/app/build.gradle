@@ -7,8 +7,9 @@ android {
         applicationId "app.moneta.tracker"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // CI passes the build number so every new APK installs as an update.
+        versionCode((System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
+        versionName "1.3." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +17,28 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // One permanent signing key (android/moneta.keystore, never committed), so a
+    // new APK can be installed over the old one without losing the app's data.
+    // Locally the password comes from android/keystore.properties; on GitHub
+    // from the MONETA_KEYSTORE_PASSWORD secret.
+    def ksFile = rootProject.file('moneta.keystore')
+    def ksProps = new Properties()
+    def ksPropsFile = rootProject.file('keystore.properties')
+    if (ksPropsFile.exists()) ksPropsFile.withInputStream { ksProps.load(it) }
+    def ksPass = System.getenv('MONETA_KEYSTORE_PASSWORD') ?: ksProps.getProperty('password')
+    signingConfigs {
+        moneta {
+            if (ksFile.exists() && ksPass) {
+                storeFile ksFile
+                storePassword ksPass
+                keyAlias 'moneta'
+                keyPassword ksPass
+            }
+        }
+    }
     buildTypes {
         release {
+            if (ksFile.exists() && ksPass) signingConfig signingConfigs.moneta
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

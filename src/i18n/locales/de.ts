@@ -296,6 +296,7 @@ const de: Record<string, string> = {
   'auth.google': "Weiter mit Google",
   'auth.skip': "Ohne Konto fortfahren",
   'auth.privacy': "Verschlüsselt übertragen · nur du kannst deine Daten lesen",
+  'auth.googleOff': "Die Anmeldung mit Google ist noch nicht aktiviert. Nutze vorerst E-Mail und Passwort.",
   'dash.noPrevMonth': "Noch keine Ausgaben im Vormonat zum Vergleichen",
   'auth.notConfirmed': "Deine E-Mail ist noch nicht bestätigt. Öffne den Link in deinem Postfach (auch im Spam-Ordner nachsehen).",
   'auth.resendConfirm': "Bestätigungs-E-Mail erneut senden",
