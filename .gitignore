@@ -1,0 +1,12 @@
+node_modules
+dist
+dev-dist
+.env
+.env.local
+
+# Capacitor / native
+android/app/release/
+*.keystore
+*.jks
+ios/App/Pods/
+*.tsbuildinfo

@@ -1,0 +1,46 @@
+# Builds an installable Android APK on every push to main (or by hand from the
+# Actions tab). Download it from the run's "Artifacts" section.
+# Add repository secrets VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY and VITE_SITE_URL
+# (Settings → Secrets and variables → Actions) to enable sign-in in the app.
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - run: npm ci
+
+      - name: Build web app
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SITE_URL: ${{ secrets.VITE_SITE_URL }}
+
+      - run: npx cap sync android
+
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moneta-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
