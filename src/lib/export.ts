@@ -4,6 +4,7 @@ import type { Account, Category, Settings, Transaction } from '@/db/types';
 import { download } from './utils';
 import { isNative } from './native';
 import { formatDate, formatMoney } from './format';
+import { scheduleSync } from './sync';
 
 /** Exports (CSV / XLSX / PDF) and JSON backup & restore. */
 
@@ -39,7 +40,7 @@ const HEAD = ['date', 'type', 'amount', 'currency', 'category', 'account', 'note
 export function exportCSV(txs: Transaction[], c: ExportCtx) {
   const esc = (v: unknown) => {
     const s = String(v ?? '');
-    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    return /[",\n\r;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines = [HEAD.map((h) => c.t(`export.${h}`)).join(',')];
   for (const r of rows(txs, c)) lines.push(HEAD.map((h) => esc(r[h])).join(','));
@@ -119,6 +120,7 @@ export async function restoreJSON(file: File) {
     }
     await db.tombstones.clear();
   });
+  scheduleSync(500);
 }
 
 export async function wipeAll() {

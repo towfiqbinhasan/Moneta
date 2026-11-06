@@ -35,7 +35,7 @@ export function CategoryDonut({ data }: { data: { name: string; value: number; c
           <Pie data={data} dataKey="value" nameKey="name" innerRadius="64%" outerRadius="100%" paddingAngle={data.length > 1 ? 1.5 : 0} stroke="rgb(var(--card))" strokeWidth={2} isAnimationActive>
             {data.map((d) => <Cell key={d.name} fill={d.color} />)}
           </Pie>
-          <Tooltip content={({ payload }) => payload?.[0] ? <TipBox rows={[{ name: String(payload[0].name), value: `${money(Number(payload[0].value))} · ${Math.round((Number(payload[0].value) / total) * 100)}%`, color: (payload[0].payload as { color: string }).color }]} /> : null} />
+          <Tooltip content={({ payload }) => payload?.[0] ? <TipBox rows={[{ name: String(payload[0].name), value: `${money(Number(payload[0].value))} · ${total > 0 ? Math.round((Number(payload[0].value) / total) * 100) : 0}%`, color: (payload[0].payload as { color: string }).color }]} /> : null} />
         </PieChart>
       </ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">

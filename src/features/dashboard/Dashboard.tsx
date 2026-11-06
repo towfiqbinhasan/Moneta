@@ -359,7 +359,7 @@ function Top5Widget() {
             <IconTile color={c.category?.color ?? '#7a7f87'} size={34}><Icon name={c.category?.icon ?? 'circle-ellipsis'} size={17} /></IconTile>
             <div className="min-w-0 flex-1">
               <div className="flex justify-between gap-2 text-sm"><span className="truncate">{c.category?.name ?? t('cat.uncategorized')}</span><span className="tabular font-semibold">{money(c.value, undefined, { trim: true })}</span></div>
-              <ProgressBar pct={c.value / max} color={c.category?.color} className="mt-1 h-1.5" />
+              <ProgressBar pct={max > 0 ? c.value / max : 0} color={c.category?.color} className="mt-1 h-1.5" />
             </div>
           </div>
         ))}
@@ -391,7 +391,8 @@ function ComparisonWidget() {
   const cur = totals(txIn(transactions, { start: rangeFor('monthly', now, settings).start, end: now }), ctx);
   const prevRange = rangeFor('monthly', addMonths(now, -1), settings);
   const elapsed = now.getTime() - rangeFor('monthly', now, settings).start.getTime();
-  const prev = totals(txIn(transactions, { start: prevRange.start, end: new Date(prevRange.start.getTime() + elapsed) }), ctx);
+  const prevEnd = new Date(Math.min(prevRange.end.getTime(), prevRange.start.getTime() + elapsed));
+  const prev = totals(txIn(transactions, { start: prevRange.start, end: prevEnd }), ctx);
   const diff = prev.expense ? ((cur.expense - prev.expense) / prev.expense) * 100 : 0;
   const tips = insights(transactions, ctx);
   const up = diff > 0;
@@ -446,7 +447,7 @@ function GoalsWidget() {
 function HealthWidget() {
   const { t } = useTranslation();
   const { transactions, budgets, debts, ctx } = useData();
-  const owed = debts.filter((x) => x.direction === 'owe').reduce((a, x) => a + toBase(x.amount - x.payments.reduce((p, q) => p + q.amount, 0), x.currency, ctx), 0);
+  const owed = debts.filter((x) => x.direction === 'owe').reduce((a, x) => a + toBase(Math.max(0, x.amount - x.payments.reduce((p, q) => p + q.amount, 0)), x.currency, ctx), 0);
   const h = healthScore(transactions, budgets, owed, ctx);
   const color = h.score >= 70 ? '#16a34a' : h.score >= 45 ? '#eda100' : '#e34948';
   return (

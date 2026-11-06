@@ -3,6 +3,7 @@ import { db } from '@/db/db';
 import { create } from '@/db/repo';
 import type { Period, Recurring, Repeat, Transaction } from '@/db/types';
 import { isoDay } from './period';
+import { scheduleSync } from './sync';
 
 /** Advance a yyyy-MM-dd date by one frequency step. */
 export function nextOccurrence(date: string, freq: Period | Repeat, interval = 1): string {
@@ -39,5 +40,6 @@ export async function runRecurring(today = new Date()): Promise<number> {
     const active = !rule.endDate || next <= rule.endDate;
     await db.recurring.put({ ...rule, nextDate: next, active, updatedAt: Date.now() } satisfies Recurring);
   }
+  if (rules.length) scheduleSync();
   return created;
 }

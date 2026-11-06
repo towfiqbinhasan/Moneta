@@ -22,12 +22,16 @@ export function BillsPage() {
 
   /** Mark paid: records the expense and moves the due date forward. */
   const pay = async (b: Bill) => {
-    const accountId = b.accountId ?? accounts[0]?.id;
+    const accountId = accounts.find((a) => a.id === b.accountId && !a.archived)?.id ?? accounts.find((a) => !a.archived)?.id ?? accounts[0]?.id;
     if (!accountId) return;
     const tx = await create<Transaction>('transactions', { type: 'expense', amount: b.amount, currency: b.currency, accountId, categoryId: b.categoryId, date: isoDateTime(new Date()), note: b.name, tags: ['bill'] });
-    const undo = await update<Bill>('bills', b.id, { lastPaid: isoDay(new Date()), dueDate: b.repeat === 'none' ? b.dueDate : nextOccurrence(b.dueDate, b.repeat) });
-    if (b.repeat === 'none') await remove('bills', b.id);
-    toast(t('bill.paid', { name: b.name }), async () => { await undo(); await remove('transactions', tx.id); });
+    let undoAction: () => Promise<void>;
+    if (b.repeat === 'none') {
+      undoAction = await remove('bills', b.id);
+    } else {
+      undoAction = await update<Bill>('bills', b.id, { lastPaid: isoDay(new Date()), dueDate: nextOccurrence(b.dueDate, b.repeat) });
+    }
+    toast(t('bill.paid', { name: b.name }), async () => { await undoAction(); await remove('transactions', tx.id); });
   };
 
   return (
@@ -67,7 +71,7 @@ function BillForm({ initial, onClose }: { initial: Partial<Bill>; onClose: () =>
   const [b, setB] = useState<Partial<Bill>>({ name: '', currency: settings.baseCurrency, dueDate: isoDay(new Date()), repeat: 'monthly', remindDaysBefore: 3, accountId: accounts[0]?.id, ...initial });
   const [amount, setAmount] = useState(initial.amount ? String(initial.amount) : '');
   const set = <K extends keyof Bill>(k: K, v: Bill[K]) => setB((p) => ({ ...p, [k]: v }));
-  const valid = !!b.name?.trim() && parseAmount(amount) > 0;
+  const valid = !!b.name?.trim() && parseAmount(amount) > 0 && !!b.dueDate;
   const submit = async () => { if (!valid) return; await save<Bill>('bills', { ...(b as Bill), name: b.name!.trim(), amount: parseAmount(amount) }); onClose(); };
   const del = async () => { const u = await remove('bills', initial.id!); toast(t('common.deleted'), u); onClose(); };
   return (

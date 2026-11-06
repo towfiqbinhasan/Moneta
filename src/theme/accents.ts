@@ -30,7 +30,10 @@ export interface Accent {
 }
 
 function shade(hex: string, pct: number) {
-  const n = parseInt(hex.slice(1), 16);
+  let h = hex.startsWith('#') ? hex : '#' + hex;
+  if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+  const n = parseInt(h.slice(1), 16);
+  if (isNaN(n)) return hex;
   const f = (c: number) => Math.max(0, Math.min(255, Math.round(c + (pct / 100) * (pct < 0 ? c : 255 - c))));
   return `#${[(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => f(c).toString(16).padStart(2, '0')).join('')}`;
 }

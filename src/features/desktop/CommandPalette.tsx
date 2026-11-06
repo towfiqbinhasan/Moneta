@@ -94,7 +94,7 @@ export function CommandPalette({ open, onClose, onShortcuts, onImport }: { open:
         const cat = d.categories.find((c) => c.id === x.categoryId);
         out.push({
           id: 'tx-' + x.id, group: TX, label: x.note || cat?.name || t(`tx.${x.type}`),
-          hint: `${d.date(x.date, 'd MMM')} · ${x.type === 'expense' ? '−' : '+'}${d.money(x.amount, x.currency)}`,
+          hint: `${d.date(x.date, 'd MMM')} · ${x.type === 'expense' ? '−' : x.type === 'income' ? '+' : ''}${d.money(x.amount, x.currency)}`,
           icon: <Icon name={cat?.icon ?? 'receipt'} size={17} style={{ color: cat?.color }} />,
           run: () => openAdd({ tx: x }),
         });

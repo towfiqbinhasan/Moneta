@@ -59,7 +59,8 @@ export function compressImage(file: File, maxSide = 1024, quality = 0.7): Promis
 
 /** Safely evaluate a numpad expression like "120+35.5-10". */
 export function evalExpression(expr: string): number {
-  const tokens = expr.replace(/×/g, '*').replace(/÷/g, '/').match(/(\d+\.?\d*|\.\d+|[+\-*/])/g);
+  if (!expr) return 0;
+  const tokens = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/[−–—]/g, '-').match(/(\d+\.?\d*|\.\d+|[+\-*/])/g);
   if (!tokens) return 0;
   // Two-pass: * and / first, then + and −.
   const nums: number[] = [];
@@ -80,7 +81,7 @@ export function evalExpression(expr: string): number {
       expectNum = false;
     }
   }
-  if (ops.length >= nums.length) ops.pop();
+  while (ops.length >= nums.length && ops.length > 0) ops.pop();
   let total = nums[0] ?? 0;
   for (let i = 0; i < ops.length; i++) total = ops[i] === '+' ? total + nums[i + 1] : total - nums[i + 1];
   return Number.isFinite(total) ? total : 0;

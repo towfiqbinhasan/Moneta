@@ -14,6 +14,7 @@ import { isoDateTime } from '@/lib/period';
 import { toCur } from '@/lib/stats';
 import { compressImage, cx, evalExpression, round } from '@/lib/utils';
 import { nextOccurrence } from '@/lib/recurring';
+import { parseAmount } from '@/lib/format';
 import type { AddOptions } from '../AppShell';
 import { haptic } from '@/components/motion';
 
@@ -89,7 +90,7 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
     update<Template>('templates', tp.id, { uses: tp.uses + 1 });
   };
 
-  const canSave = amount > 0 && !!accountId && (type !== 'transfer' || (!!toAccountId && toAccountId !== accountId));
+  const canSave = amount > 0 && !!accountId && !!date.trim() && (type !== 'transfer' || (!!toAccountId && toAccountId !== accountId));
 
   async function submit() {
     if (!canSave) { setShaking(true); setTimeout(() => setShaking(false), 450); haptic([15, 30, 15]); return; }
@@ -104,9 +105,9 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
       accountId,
       accountAmount,
       toAccountId: type === 'transfer' ? toAccountId : undefined,
-      toAmount: type === 'transfer' ? (toAmountStr ? parseFloat(toAmountStr) : autoToAmount) : undefined,
+      toAmount: type === 'transfer' ? (toAmountStr ? parseAmount(toAmountStr) : autoToAmount) : undefined,
       categoryId: type === 'transfer' ? undefined : categoryId,
-      date,
+      date: date.trim() || isoDateTime(new Date()),
       note: note.trim(),
       tags,
       receipt,
@@ -118,11 +119,13 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
       toast(t('tx.updated'), undo);
     } else {
       const tx = await create<Transaction>('transactions', data);
+      let ruleId: string | undefined;
       if (repeat) {
         const rule = await create<Recurring>('recurring', {
           type, amount, currency, accountId, toAccountId: data.toAccountId, categoryId: data.categoryId, note: data.note, tags,
           frequency: repeat, interval: 1, nextDate: nextOccurrence(date.slice(0, 10), repeat), active: true,
         });
+        ruleId = rule.id;
         await update<Transaction>('transactions', tx.id, { recurringId: rule.id });
       }
       if (asTemplate) {
@@ -132,7 +135,10 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
         });
       }
       await patchSettings({ lastAccountId: accountId });
-      toast(t('tx.saved', { amount: money(amount, currency) }), () => remove('transactions', tx.id).then(() => {}));
+      toast(t('tx.saved', { amount: money(amount, currency) }), async () => {
+        if (ruleId) await remove('recurring', ruleId);
+        await remove('transactions', tx.id);
+      });
     }
     onClose();
   }
@@ -147,8 +153,9 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
   // Physical keyboard support (when not typing in a text field).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const el = e.target as HTMLElement;
-      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return;
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable) return;
       if (/^[0-9.+\-*/]$/.test(e.key)) {
         e.preventDefault();
         setExpr((v) => v + (e.key === '*' ? '×' : e.key === '/' ? '÷' : e.key));

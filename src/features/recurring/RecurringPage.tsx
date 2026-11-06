@@ -62,12 +62,14 @@ function RecurringForm({ rule, onClose }: { rule: Recurring; onClose: () => void
   const [next, setNext] = useState(rule.nextDate);
   const [end, setEnd] = useState(rule.endDate ?? '');
   const [note, setNote] = useState(rule.note);
+  const valid = parseAmount(amount) > 0 && !!next;
   const submit = async () => {
-    await update<Recurring>('recurring', rule.id, { amount: parseAmount(amount), frequency: freq, interval: Math.max(1, interval), nextDate: next, endDate: end || undefined, note, active: true });
+    if (!valid) return;
+    await update<Recurring>('recurring', rule.id, { amount: parseAmount(amount), frequency: freq, interval: Math.max(1, interval || 1), nextDate: next, endDate: end || undefined, note, active: true });
     onClose();
   };
   return (
-    <Sheet open onClose={onClose} title={t('rec.edit')} footer={<Button block onClick={submit}>{t('common.save')}</Button>}>
+    <Sheet open onClose={onClose} title={t('rec.edit')} footer={<Button block disabled={!valid} onClick={submit}>{t('common.save')}</Button>}>
       <div className="space-y-4">
         <Field label={`${t('budget.amount')} (${rule.currency})`}><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label={t('tx.note')}><Input value={note} onChange={(e) => setNote(e.target.value)} /></Field>

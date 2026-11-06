@@ -60,7 +60,16 @@ function SplitForm({ initial, onClose }: { initial: Partial<Split>; onClose: () 
   const [title, setTitle] = useState(initial.title ?? '');
   const [currency, setCurrency] = useState(initial.currency ?? settings.baseCurrency);
   const [total, setTotal] = useState(initial.total ? String(initial.total) : '');
-  const [mode, setMode] = useState<'equal' | 'custom'>('equal');
+  const [mode, setMode] = useState<'equal' | 'custom'>(() => {
+    if (!initial.participants || initial.participants.length < 2 || !initial.total) return 'equal';
+    const dec = defaultDecimals(initial.currency ?? 'USD');
+    const expected = round(initial.total / initial.participants.length, dec);
+    const isCustom = initial.participants.some((p, i) => {
+      const exp = i === 0 ? round(initial.total! - expected * (initial.participants!.length - 1), dec) : expected;
+      return Math.abs(p.share - exp) > 10 ** -dec;
+    });
+    return isCustom ? 'custom' : 'equal';
+  });
   const [people, setPeople] = useState<SplitParticipant[]>(initial.participants ?? [{ name: t('split.me'), share: 0, paid: true }, { name: '', share: 0, paid: false }]);
   const [makeDebts, setMakeDebts] = useState(!initial.id);
 
@@ -99,7 +108,16 @@ function SplitForm({ initial, onClose }: { initial: Partial<Split>; onClose: () 
           <Field label={t('split.total')}><Input inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} /></Field>
           <Field label={t('common.currency')}><CurrencyPicker compact value={currency} onChange={setCurrency} /></Field>
         </div>
-        <Segmented value={mode} onChange={setMode} options={[{ value: 'equal', label: t('split.equal') }, { value: 'custom', label: t('split.custom') }]} />
+        <Segmented
+          value={mode}
+          onChange={(m) => {
+            if (m === 'custom' && mode === 'equal') {
+              setPeople(people.map((p, i) => ({ ...p, share: shares[i] })));
+            }
+            setMode(m);
+          }}
+          options={[{ value: 'equal', label: t('split.equal') }, { value: 'custom', label: t('split.custom') }]}
+        />
         <div className="space-y-2">
           {people.map((p, i) => (
             <div key={i} className="flex items-center gap-2">

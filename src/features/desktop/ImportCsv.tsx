@@ -10,7 +10,9 @@ import { remove } from '@/db/repo';
 import type { Category, Transaction } from '@/db/types';
 import { parseAmount } from '@/lib/format';
 import { scheduleSync } from '@/lib/sync';
-import { PALETTE, uid } from '@/lib/utils';
+import { defaultDecimals } from '@/lib/currency';
+import { toCur } from '@/lib/stats';
+import { PALETTE, round, uid } from '@/lib/utils';
 
 /**
  * CSV import (bank statements, other apps, or Moneta's own export).
@@ -76,7 +78,7 @@ function parseDate(s: string, dmy: boolean): string | null {
 export function ImportCsv({ file, onClose }: { file: File | null; onClose: () => void }) {
   const { t } = useTranslation();
   const toast = useToast();
-  const { accounts, categories, settings } = useData();
+  const { accounts, categories, settings, ctx } = useData();
   const [rows, setRows] = useState<string[][]>([]);
   const [map, setMap] = useState<Record<Col, number>>({} as Record<Col, number>);
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '');
@@ -123,19 +125,24 @@ export function ImportCsv({ file, onClose }: { file: File | null; onClose: () =>
     const catByName = new Map(categories.map((c) => [`${c.kind}:${c.name.toLowerCase()}`, c]));
     const newCats: Category[] = [];
     let order = Math.max(0, ...categories.map((c) => c.order)) + 1;
-    const txs: Transaction[] = parsed.map((p, i) => {
+    const txs: Transaction[] = [];
+    for (let i = 0; i < parsed.length; i++) {
+      const p = parsed[i];
       let cat = p.category ? catByName.get(`${p.type}:${p.category.toLowerCase()}`) : undefined;
       if (!cat && p.category && createCats) {
         cat = { id: uid(), createdAt: now, updatedAt: now, name: p.category, kind: p.type as 'expense' | 'income', icon: 'circle-ellipsis', color: PALETTE[newCats.length % PALETTE.length], order: order++ };
         catByName.set(`${p.type}:${p.category.toLowerCase()}`, cat);
         newCats.push(cat);
       }
-      const acc = accounts.find((a) => a.name.toLowerCase() === p.account.toLowerCase()) ?? accounts.find((a) => a.id === accountId)!;
-      return {
-        id: uid(), createdAt: now + i, updatedAt: now, type: p.type, amount: p.amount, currency: p.currency || acc.currency,
-        accountId: acc.id, categoryId: cat?.id, date: p.date!, note: p.note, tags: p.tags,
-      };
-    });
+      const acc = accounts.find((a) => a.name.toLowerCase() === p.account.toLowerCase()) ?? accounts.find((a) => a.id === accountId) ?? accounts[0];
+      if (!acc) continue;
+      const cur = p.currency || acc.currency;
+      const accountAmount = cur !== acc.currency ? round(toCur(p.amount, cur, acc.currency, ctx), defaultDecimals(acc.currency)) : undefined;
+      txs.push({
+        id: uid(), createdAt: now + i, updatedAt: now, type: p.type, amount: p.amount, currency: cur,
+        accountAmount, accountId: acc.id, categoryId: cat?.id, date: p.date!, note: p.note, tags: p.tags,
+      });
+    }
     await db.transaction('rw', db.transactions, db.categories, async () => {
       await db.categories.bulkPut(newCats);
       await db.transactions.bulkPut(txs);

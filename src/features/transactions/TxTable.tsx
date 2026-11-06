@@ -68,7 +68,7 @@ export function TxTable({ txs }: { txs: Transaction[] }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || document.querySelector('[role="dialog"]')) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || el.isContentEditable || document.querySelector('[role="dialog"]')) return;
       if (e.key === 'Escape') { setSel(new Set()); setMenu(null); }
       if ((e.key === 'Delete' || e.key === 'Backspace') && sel.size) { e.preventDefault(); deleteSelected(); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') { e.preventDefault(); setSel(new Set(rows.map((x) => x.id))); }
@@ -107,7 +107,17 @@ export function TxTable({ txs }: { txs: Transaction[] }) {
     scheduleSync();
     setBulk(null);
     toast(t('table.updated', { count: selected.length }), async () => {
-      await db.transaction('rw', db.transactions, async () => { for (const b of before) await db.transactions.update(b.id, { [field]: b.v, updatedAt: Date.now() } as Partial<Transaction>); });
+      await db.transaction('rw', db.transactions, async () => {
+        for (const b of before) {
+          const rec = await db.transactions.get(b.id);
+          if (rec) {
+            if (b.v === undefined) delete (rec as Record<string, unknown>)[field];
+            else (rec as Record<string, unknown>)[field] = b.v;
+            rec.updatedAt = Date.now();
+            await db.transactions.put(rec);
+          }
+        }
+      });
       scheduleSync();
     });
   };

@@ -212,7 +212,14 @@ export const WALLET_SUGGESTIONS = ['bKash', 'Nagad', 'Rocket', 'PayPal', 'Apple 
  */
 export function normalizeSettings(raw: Settings): Settings {
   const d = defaultSettings();
-  const s = { ...d, ...raw, accent: raw.accent === '#2a78d6' ? d.accent : raw.accent ?? d.accent, profile: { ...d.profile, ...raw.profile }, lock: { ...d.lock, ...raw.lock } };
+  const s = {
+    ...d,
+    ...raw,
+    accent: raw.accent === '#2a78d6' ? d.accent : raw.accent ?? d.accent,
+    profile: { ...d.profile, ...raw.profile },
+    lock: { ...d.lock, ...raw.lock },
+    dailyReminder: { ...d.dailyReminder, ...raw.dailyReminder },
+  };
   const known = new Set(s.widgets.map((w) => w.id));
   const missing = ALL_WIDGETS.filter((id) => !known.has(id)).map((id) => ({ id, visible: true }));
   s.widgets = [...s.widgets.filter((w) => ALL_WIDGETS.includes(w.id)), ...missing];

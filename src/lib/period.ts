@@ -19,11 +19,16 @@ export type PrefsLike = Pick<Settings, 'weekStartsOn' | 'monthStartDay'>;
 export const isoDay = (d: Date) => format(d, 'yyyy-MM-dd');
 export const isoDateTime = (d: Date) => format(d, "yyyy-MM-dd'T'HH:mm");
 
+function safeMonthDay(y: number, m: number, day: number): Date {
+  const maxDays = new Date(y, m + 1, 0).getDate();
+  return new Date(y, m, Math.min(day, maxDays));
+}
+
 function monthStart(d: Date, startDay: number): Date {
   const y = d.getFullYear();
   const m = d.getMonth();
-  const candidate = new Date(y, m, startDay);
-  return d >= candidate ? candidate : new Date(y, m - 1, startDay);
+  const candidate = safeMonthDay(y, m, startDay);
+  return d >= candidate ? candidate : safeMonthDay(y, m - 1, startDay);
 }
 
 export function rangeFor(period: Period, ref: Date, p: PrefsLike): Range {

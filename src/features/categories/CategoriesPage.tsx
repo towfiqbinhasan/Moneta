@@ -12,6 +12,7 @@ import { db } from '@/db/db';
 import type { Category } from '@/db/types';
 import { CATEGORY_SETS } from '@/db/defaults';
 import { seedCategories } from '@/db/demo';
+import { scheduleSync } from '@/lib/sync';
 
 export function CategoriesPage() {
   const { t } = useTranslation();
@@ -27,8 +28,12 @@ export function CategoriesPage() {
     const i = siblings.indexOf(c);
     const o = siblings[i + dir];
     if (!o) return;
-    await update<Category>('categories', c.id, { order: o.order });
-    await update<Category>('categories', o.id, { order: c.order });
+    const cOrder = c.order;
+    const oOrder = o.order;
+    const newC = cOrder === oOrder ? (dir === 1 ? oOrder + 1 : oOrder - 1) : oOrder;
+    const newO = cOrder === oOrder ? oOrder : cOrder;
+    await update<Category>('categories', c.id, { order: newC });
+    await update<Category>('categories', o.id, { order: newO });
   };
 
   const Row = ({ c, sub, idx, count }: { c: Category; sub?: boolean; idx: number; count: number }) => (
@@ -92,14 +97,31 @@ function CategoryForm({ initial, onClose }: { initial: Partial<Category>; onClos
     // Transactions keep existing but become "uncategorised" (or move to parent if a subcategory is deleted).
     const fallback = initial.parentId;
     await db.transaction('rw', db.transactions, async () => {
-      for (const x of used) await db.transactions.update(x.id, { categoryId: fallback, updatedAt: Date.now() });
+      for (const x of used) {
+        const rec = await db.transactions.get(x.id);
+        if (rec) {
+          if (fallback) rec.categoryId = fallback;
+          else delete rec.categoryId;
+          rec.updatedAt = Date.now();
+          await db.transactions.put(rec);
+        }
+      }
     });
+    if (used.length) scheduleSync();
     const undo = await remove('categories', ids);
     toast(t('common.deleted'), async () => {
       await undo();
       await db.transaction('rw', db.transactions, async () => {
-        for (const x of used) await db.transactions.update(x.id, { categoryId: x.categoryId, updatedAt: Date.now() });
+        for (const x of used) {
+          const rec = await db.transactions.get(x.id);
+          if (rec) {
+            rec.categoryId = x.categoryId;
+            rec.updatedAt = Date.now();
+            await db.transactions.put(rec);
+          }
+        }
       });
+      if (used.length) scheduleSync();
     });
     onClose();
   };

@@ -53,7 +53,7 @@ export function DebtsPage() {
                   <span>{d.note}</span>
                   {d.dueDate && left > 0 && <span className={days! < 0 ? 'text-red-500' : ''}>{t('debt.due')}: {date(d.dueDate)}</span>}
                 </div>
-                <ProgressBar pct={paid / d.amount} color="#1baf7a" className="mt-2 h-1.5" />
+                <ProgressBar pct={d.amount > 0 ? paid / d.amount : 0} color="#1baf7a" className="mt-2 h-1.5" />
                 <div className="mt-1 text-[11px] text-muted">{t('debt.paidOf', { paid: money(paid, d.currency), total: money(d.amount, d.currency) })}</div>
               </button>
               {left > 0 && <Button variant="soft" size="sm" className="mt-2" onClick={() => setPay(d)}>{t('debt.recordPayment')}</Button>}
@@ -74,12 +74,12 @@ function PaySheet({ debt, onClose }: { debt: Debt; onClose: () => void }) {
   const [amount, setAmount] = useState(String(left));
   const submit = async () => {
     const v = parseAmount(amount);
-    if (!v) return;
-    await update<Debt>('debts', debt.id, { payments: [...debt.payments, { id: uid(), amount: Math.min(v, left), date: isoDay(new Date()) }] });
+    if (v <= 0) return;
+    await update<Debt>('debts', debt.id, { payments: [...(debt.payments ?? []), { id: uid(), amount: v, date: isoDay(new Date()) }] });
     onClose();
   };
   return (
-    <Sheet open onClose={onClose} title={`${t('debt.recordPayment')} · ${debt.person}`} footer={<Button block onClick={submit}>{t('common.save')}</Button>}>
+    <Sheet open onClose={onClose} title={`${t('debt.recordPayment')} · ${debt.person}`} footer={<Button block disabled={parseAmount(amount) <= 0} onClick={submit}>{t('common.save')}</Button>}>
       <Field label={`${t('budget.amount')} (${debt.currency})`}><Input inputMode="decimal" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
     </Sheet>
   );

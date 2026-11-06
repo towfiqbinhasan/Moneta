@@ -41,9 +41,13 @@ function Overview() {
   const [filter, setFilter] = useState(EMPTY_FILTER);
   const [catSel, setCatSel] = useState<string>('');
 
-  const range: Range = mode === 'custom'
-    ? { start: new Date(from + 'T00:00'), end: new Date(to + 'T23:59:59') }
-    : rangeFor(mode, ref, settings);
+  const range: Range = useMemo(() => {
+    if (mode !== 'custom') return rangeFor(mode, ref, settings);
+    const d1 = from ? new Date(from + 'T00:00') : new Date();
+    const d2 = to ? new Date(to + 'T23:59:59') : new Date();
+    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return rangeFor('monthly', ref, settings);
+    return d1 <= d2 ? { start: d1, end: d2 } : { start: new Date(to + 'T00:00'), end: new Date(from + 'T23:59:59') };
+  }, [mode, ref, settings, from, to]);
   const inPeriod = useMemo(() => transactions.filter((x) => inRange(x.date, range)), [transactions, range.start.getTime(), range.end.getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
   const filtered = useFiltered(inPeriod, { ...filter, categoryId: catSel || filter.categoryId });
   const tt = totals(filtered, ctx);
@@ -126,8 +130,8 @@ function Overview() {
                 <button key={c.id} onClick={() => setCatSel(catSel === c.id ? '' : c.id)} className={cx('flex w-full items-center gap-3 rounded-xl p-1 text-start', catSel === c.id && 'bg-ink/5')}>
                   <IconTile color={c.category?.color ?? '#7a7f87'} size={32}><Icon name={c.category?.icon ?? 'circle-ellipsis'} size={16} /></IconTile>
                   <div className="min-w-0 flex-1">
-                    <div className="flex justify-between text-sm"><span className="truncate">{c.category?.name ?? t('cat.uncategorized')}</span><span className="tabular">{money(c.value)} <span className="text-xs text-muted">{Math.round((c.value / tt.expense) * 100)}%</span></span></div>
-                    <ProgressBar pct={c.value / cats[0].value} color={c.category?.color} className="mt-1 h-1.5" />
+                    <div className="flex justify-between text-sm"><span className="truncate">{c.category?.name ?? t('cat.uncategorized')}</span><span className="tabular">{money(c.value)} <span className="text-xs text-muted">{tt.expense > 0 ? Math.round((c.value / tt.expense) * 100) : 0}%</span></span></div>
+                    <ProgressBar pct={cats[0]?.value ? c.value / cats[0].value : 0} color={c.category?.color} className="mt-1 h-1.5" />
                   </div>
                 </button>
               ))}

@@ -75,7 +75,7 @@ function BudgetForm({ initial, onClose }: { initial: Partial<Budget>; onClose: (
   const parents = categories.filter((c) => c.kind === 'expense' && !c.parentId);
   const toggleCat = (id: string) => set('categoryIds', b.categoryIds!.includes(id) ? b.categoryIds!.filter((x) => x !== id) : [...b.categoryIds!, id]);
 
-  const autoName = b.categoryIds!.length ? b.categoryIds!.map((id) => categories.find((c) => c.id === id)?.name).join(', ') : t('budget.overall');
+  const autoName = b.categoryIds!.length ? b.categoryIds!.map((id) => categories.find((c) => c.id === id)?.name).filter(Boolean).join(', ') : t('budget.overall');
   const valid = parseAmount(amount) > 0;
 
   const submit = async () => {

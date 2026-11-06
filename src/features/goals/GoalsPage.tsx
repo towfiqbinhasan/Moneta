@@ -93,10 +93,11 @@ function FundSheet({ goal, onClose }: { goal: Goal; onClose: () => void }) {
     await create<GoalEntry>('goalEntries', { goalId: goal.id, amount: mode === 'add' ? v : -v, date: isoDay(new Date()), note });
     const after = ((s.saved + (mode === 'add' ? v : -v)) / goal.target) * 100;
     // Celebrate each newly-crossed milestone once.
-    const crossed = MILESTONES.filter((m) => before < m && after >= m && !goal.milestones.includes(m));
+    const currentMilestones = goal.milestones ?? [];
+    const crossed = MILESTONES.filter((m) => before < m && after >= m && !currentMilestones.includes(m));
     if (crossed.length) {
       celebrate(Math.max(...crossed));
-      await update<Goal>('goals', goal.id, { milestones: [...goal.milestones, ...crossed] });
+      await update<Goal>('goals', goal.id, { milestones: [...currentMilestones, ...crossed] });
       toast(t('goal.milestone', { pct: Math.max(...crossed) }));
     }
     onClose();

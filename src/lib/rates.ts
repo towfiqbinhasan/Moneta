@@ -48,10 +48,12 @@ export function perBase(code: string, base: string, rates: RateMap): number | un
 
 /** Convert between any two currencies. Unknown rates fall back to 1:1 (flagged in UI). */
 export function convert(amount: number, from: string, to: string, base: string, rates: RateMap): number {
-  if (from === to) return amount;
+  if (from === to || !amount || !Number.isFinite(amount)) return amount || 0;
   const f = perBase(from, base, rates) ?? 1;
   const t = perBase(to, base, rates) ?? 1;
-  return (amount * f) / t;
+  if (!t || !Number.isFinite(t)) return amount;
+  const result = (amount * f) / t;
+  return Number.isFinite(result) ? result : amount;
 }
 
 export async function setManualRate(code: string, perBaseValue: number | undefined) {

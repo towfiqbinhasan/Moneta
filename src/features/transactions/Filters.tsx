@@ -6,6 +6,7 @@ import { useData } from '@/hooks/useData';
 import { Button, Field, Input, Select } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
 import { rootOf, toBase } from '@/lib/stats';
+import { parseAmount } from '@/lib/format';
 
 /** Search + filter by category, account, currency, amount, date, tag, note. */
 export interface TxFilter {
@@ -33,11 +34,16 @@ export function useFiltered(txs: Transaction[], f: TxFilter) {
       if (f.accountId && t.accountId !== f.accountId && t.toAccountId !== f.accountId) return false;
       if (f.currency && t.currency !== f.currency) return false;
       if (f.tag && !t.tags.includes(f.tag.replace(/^#/, ''))) return false;
-      if (f.from && t.date.slice(0, 10) < f.from) return false;
-      if (f.to && t.date.slice(0, 10) > f.to) return false;
+      const day = t.date ? t.date.slice(0, 10) : '';
+      const [from, to] = f.from && f.to && f.from > f.to ? [f.to, f.from] : [f.from, f.to];
+      if (from && day < from) return false;
+      if (to && day > to) return false;
       const v = toBase(t.amount, t.currency, ctx);
-      if (f.min && v < parseFloat(f.min)) return false;
-      if (f.max && v > parseFloat(f.max)) return false;
+      const min = f.min ? parseAmount(f.min) : undefined;
+      const max = f.max ? parseAmount(f.max) : undefined;
+      const [lo, hi] = min !== undefined && max !== undefined && min > max ? [max, min] : [min, max];
+      if (lo !== undefined && v < lo) return false;
+      if (hi !== undefined && v > hi) return false;
       if (q) {
         const cat = categories.find((c) => c.id === t.categoryId)?.name ?? '';
         const hay = `${t.note} ${t.tags.map((x) => '#' + x).join(' ')} ${cat} ${t.amount}`.toLowerCase();

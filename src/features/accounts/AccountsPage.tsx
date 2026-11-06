@@ -26,11 +26,15 @@ export function AccountsPage() {
   const list = accounts.filter((a) => showArchived || !a.archived);
 
   const move = async (a: Account, dir: -1 | 1) => {
-    const i = accounts.indexOf(a);
-    const other = accounts[i + dir];
+    const i = list.indexOf(a);
+    const other = list[i + dir];
     if (!other) return;
-    await update<Account>('accounts', a.id, { order: other.order });
-    await update<Account>('accounts', other.id, { order: a.order });
+    const aOrder = a.order;
+    const oOrder = other.order;
+    const newA = aOrder === oOrder ? (dir === 1 ? oOrder + 1 : oOrder - 1) : oOrder;
+    const newO = aOrder === oOrder ? oOrder : aOrder;
+    await update<Account>('accounts', a.id, { order: newA });
+    await update<Account>('accounts', other.id, { order: newO });
   };
 
   return (

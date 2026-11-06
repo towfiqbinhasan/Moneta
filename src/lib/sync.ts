@@ -280,7 +280,7 @@ export async function syncNow(): Promise<{ pushed: number; pulled: number }> {
       if (row.synced_at && row.synced_at > pullMark) pullMark = row.synced_at;
       if (row.tbl === 'settings') {
         const local = await db.settings.get('app');
-        if (local && (fresh || row.updated_at > local.updatedAt)) {
+        if (local && row.data && typeof row.data === 'object' && (fresh || row.updated_at > local.updatedAt)) {
           const remote = row.data as Partial<Settings>;
           const keep = Object.fromEntries(LOCAL_ONLY.map((k) => [k, local[k]]));
           await db.settings.put({ ...local, ...remote, ...keep, id: 'app', updatedAt: row.updated_at } as Settings);
@@ -297,9 +297,11 @@ export async function syncNow(): Promise<{ pushed: number; pulled: number }> {
       } else if (tomb && tomb.deletedAt >= row.updated_at) {
         // Deleted locally after the remote edit — keep it deleted (tombstone will be pushed).
       } else if (!local || local.updatedAt < row.updated_at) {
-        await table.put(row.data);
-        if (tomb) await db.tombstones.delete(tomb.key);
-        pulled++;
+        if (row.data && typeof row.data === 'object') {
+          await table.put(row.data);
+          if (tomb) await db.tombstones.delete(tomb.key);
+          pulled++;
+        }
       }
     }
     if (data.length < 1000) break;
@@ -322,7 +324,7 @@ export async function syncNow(): Promise<{ pushed: number; pulled: number }> {
     push.push({ user_id: user.id, tbl: 'settings', id: 'app', data: shared, updated_at: s2.updatedAt, deleted: false });
   }
   for (let i = 0; i < push.length; i += 500) {
-    const { error } = await sb.from('records').upsert(push.slice(i, i + 500));
+    const { error } = await sb.from('records').upsert(push.slice(i, i + 500), { onConflict: 'user_id,tbl,id' });
     if (error) throw error;
   }
 

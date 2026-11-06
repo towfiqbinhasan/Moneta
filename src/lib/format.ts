@@ -89,15 +89,50 @@ export function formatDate(iso: string | Date, s: Pick<Settings, 'dateFormat' | 
 
 /** Parse a user-typed amount, accepting either '.' or ',' as decimal point and any digit script. */
 export function parseAmount(input: string): number {
-  let s = input;
-  for (const map of Object.values(DIGITS)) s = s.replace(new RegExp(`[${map}]`, 'g'), (d) => String(map.indexOf(d)));
-  s = s.replace(/\s/g, '');
+  if (!input) return 0;
+  let s = String(input).trim();
+  const isNegative = /^\(.*\)$/.test(s) || s.startsWith('-') || s.endsWith('-');
+  s = s.replace(/^\((.*)\)$/, '$1').replace(/-$/, '').replace(/^-/, '');
+
+  for (const map of Object.values(DIGITS)) {
+    s = s.replace(new RegExp(`[${map}]`, 'g'), (d) => String(map.indexOf(d)));
+  }
+
+  s = s.replace(/[^\d.,]/g, '');
+  if (!s) return 0;
+
   const lastComma = s.lastIndexOf(',');
   const lastDot = s.lastIndexOf('.');
-  if (lastComma > lastDot) s = s.replace(/\./g, '').replace(',', '.');
-  else s = s.replace(/,/g, '');
+
+  if (lastComma !== -1 && lastDot !== -1) {
+    if (lastComma > lastDot) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (lastComma !== -1) {
+    const commaCount = (s.match(/,/g) || []).length;
+    if (commaCount > 1) {
+      s = s.replace(/,/g, '');
+    } else {
+      const afterComma = s.slice(lastComma + 1);
+      const beforeComma = s.slice(0, lastComma);
+      if (beforeComma !== '0' && beforeComma.length > 0 && afterComma.length === 3) {
+        s = s.replace(/,/g, '');
+      } else {
+        s = s.replace(',', '.');
+      }
+    }
+  } else if (lastDot !== -1) {
+    const dotCount = (s.match(/\./g) || []).length;
+    if (dotCount > 1) {
+      s = s.replace(/\./g, '');
+    }
+  }
+
   const n = parseFloat(s);
-  return Number.isFinite(n) ? n : 0;
+  if (!Number.isFinite(n)) return 0;
+  return isNegative ? -n : n;
 }
 
 export const DATE_FORMATS = ['dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd', 'dd.MM.yyyy', 'd MMM yyyy', 'MMM d, yyyy'];

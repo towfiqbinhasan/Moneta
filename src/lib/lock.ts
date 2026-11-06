@@ -7,7 +7,11 @@ import { Capacitor } from '@capacitor/core';
 
 const enc = new TextEncoder();
 const b64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
-const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const unb64 = (s: string) => {
+  const norm = s.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = norm.padEnd(norm.length + ((4 - (norm.length % 4)) % 4), '=');
+  return Uint8Array.from(atob(pad), (c) => c.charCodeAt(0));
+};
 
 export async function hashPin(pin: string, salt?: string) {
   const s = salt ?? b64(crypto.getRandomValues(new Uint8Array(16)).buffer);

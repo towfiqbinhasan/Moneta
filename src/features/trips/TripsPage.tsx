@@ -47,7 +47,7 @@ export function TripsPage() {
                 <div className="my-2 flex items-baseline justify-between"><span className="text-xl font-bold tabular">{money(spent, trip.currency)}</span><span className="text-sm text-muted">/ {money(trip.budget, trip.currency)}</span></div>
                 <ProgressBar pct={pct} state={state} />
                 {spent > 0 && trip.currency !== settings.baseCurrency && <div className="mt-1 text-xs text-muted">≈ {money(toCur(spent, trip.currency, settings.baseCurrency, ctx))}</div>}
-                {cats.length > 0 && <div className="mt-2 text-xs text-muted">{cats.map((c) => `${c.category?.name}: ${money(c.value, undefined, { compact: true })}`).join(' · ')}</div>}
+                {cats.length > 0 && <div className="mt-2 text-xs text-muted">{cats.map((c) => `${c.category?.name ?? t('cat.uncategorized')}: ${money(toCur(c.value, settings.baseCurrency, trip.currency, ctx), trip.currency, { compact: true })}`).join(' · ')}</div>}
               </button>
               <Button variant={active ? 'primary' : 'soft'} block className="mt-3" onClick={() => toggle(trip)}>
                 <Plane size={16} /> {active ? t('trip.stop') : t('trip.start')}
