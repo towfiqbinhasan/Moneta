@@ -93,13 +93,17 @@ export function Root() {
     );
   }, [settings?.dailyReminder.enabled, settings?.dailyReminder.time, settings?.setupDone, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const ready = !!settings && langReady;
-  const splash = useSplash(ready);
   const sync = useSync();
+  // Cloud mode: wait until we know whether someone is signed in and, if so, their cloud data is in.
+  const cloud = sync.mode === 'cloud';
+  const cloudGate = !cloud || (sync.authReady && (!sync.user || sync.cloudReady));
+  const ready = !!settings && langReady && cloudGate;
+  const splash = useSplash(ready);
 
   let body: JSX.Element | null = null;
   if (ready) {
     if (sync.recovery) body = <AuthScreen initialMode="reset" onDone={() => {}} />; // arrived from a password-reset e-mail
+    else if (cloud && !sync.user) body = <AuthScreen onDone={() => {}} />; // cloud mode: sign in, or choose "this device only"
     else if (!settings.setupDone) body = <SetupWizard settings={settings} />;
     else if (settings.lock.enabled && locked) body = <LockScreen settings={settings} onUnlock={() => setLocked(false)} />;
     else body = (

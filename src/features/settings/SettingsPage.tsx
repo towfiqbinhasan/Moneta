@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowDown, ArrowUp, ChevronRight, Cloud, Database, Eye, EyeOff, Globe, Lock, Palette, RefreshCw, Bell, Coins, LayoutDashboard,
-  Moon, Sun, MonitorSmartphone, UserRound, BookOpen, FileDown,
+  Moon, Sun, MonitorSmartphone, UserRound, BookOpen, FileDown, HardDrive, Check,
 } from 'lucide-react';
 import { STYLES, isDark, themeId } from '@/theme/theme';
 import { useData } from '@/hooks/useData';
@@ -24,7 +24,7 @@ import { backupJSON, exportCSV, restoreJSON, wipeAll } from '@/lib/export';
 import { countDemo, removeDemo, seedDemo } from '@/db/demo';
 import { AppUpdateButton } from '@/components/AppUpdate';
 import { getManualPdf, openManual } from '@/lib/manual';
-import { syncEnabled, syncNowManual, useSync } from '@/lib/sync';
+import { setStorageMode, syncEnabled, syncNowManual, useSync, type StorageMode } from '@/lib/sync';
 import { AccountCard } from '@/components/Account';
 import { BrandBanner, MadeBy } from '@/components/Brand';
 import { useImport } from '../AppShell';
@@ -449,7 +449,8 @@ function SyncSection() {
         <p className="text-sm text-muted">{t('sync.notConfigured')}</p>
       ) : (
         <>
-          <AccountCard />
+          <StorageModePicker />
+          {sync.mode === 'cloud' && <AccountCard />}
           {sync.user ? (
             <>
               <div className="flex items-center justify-between gap-2 text-xs text-muted">
@@ -461,12 +462,40 @@ function SyncSection() {
               <p className="text-xs text-muted">{t('sync.auto')}</p>
               {sync.error && <p className="rounded-xl bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">{sync.error}</p>}
             </>
-          ) : (
-            <p className="text-sm text-muted">{t('sync.intro')}</p>
-          )}
+          ) : null}
         </>
       )}
     </Section>
+  );
+}
+
+/** "Where is my data?" — cloud (Supabase account) or this device only. Switchable any time. */
+function StorageModePicker() {
+  const { t } = useTranslation();
+  const sync = useSync();
+  const pick = async (m: StorageMode) => {
+    if (m === sync.mode) return;
+    if (!confirm(t(m === 'local' ? 'storage.toLocalConfirm' : 'storage.toCloudConfirm'))) return;
+    await setStorageMode(m);
+  };
+  const opts: { m: StorageMode; icon: typeof Cloud; title: string; desc: string }[] = [
+    { m: 'cloud', icon: Cloud, title: t('storage.cloudTitle'), desc: t('storage.cloudDesc') },
+    { m: 'local', icon: HardDrive, title: t('storage.localTitle'), desc: t('storage.localDesc') },
+  ];
+  return (
+    <div>
+      <div className="m-label mb-2">{t('storage.title')}</div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {opts.map(({ m, icon: Ico, title, desc }) => (
+          <button key={m} onClick={() => pick(m)} aria-pressed={sync.mode === m}
+            className={cx('m-tile flex items-start gap-3 rounded-2xl border p-3 text-start transition active:scale-[.98]', sync.mode === m ? 'border-brand ring-2 ring-brand/30' : 'border-line')}>
+            <Ico size={20} className={sync.mode === m ? 'mt-0.5 text-brand' : 'mt-0.5 text-muted'} />
+            <span className="min-w-0 flex-1"><b className="block text-sm">{title}</b><span className="block text-xs text-muted">{desc}</span></span>
+            {sync.mode === m && <Check size={18} className="text-brand" />}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

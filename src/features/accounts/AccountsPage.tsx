@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowDown, ArrowLeftRight, ArrowUp, Plus, Wallet } from 'lucide-react';
+import { ArrowDown, ArrowLeftRight, ArrowUp, Plus, Trash2, Wallet } from 'lucide-react';
 import { useData } from '@/hooks/useData';
 import { Button, Card, EmptyState, Field, IconTile, Input, PageHeader, Select, Toggle } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
@@ -15,15 +15,46 @@ import { WALLET_SUGGESTIONS } from '@/db/defaults';
 import { parseAmount } from '@/lib/format';
 import { useQuickAdd } from '../AppShell';
 
+/**
+ * Empty duplicates: accounts with the same name and type as another one, no opening balance,
+ * and nothing that uses them (entries, recurring rules, templates, bills). One of each name is
+ * always kept: the one in use, else the one in the main currency, else the oldest.
+ */
+function emptyDuplicates(accounts: Account[], used: Set<string>, baseCurrency: string) {
+  const groups = new Map<string, Account[]>();
+  for (const a of accounts) {
+    const k = `${a.kind}:${a.name.trim().toLowerCase()}`;
+    groups.set(k, [...(groups.get(k) ?? []), a]);
+  }
+  const out: Account[] = [];
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    const empty = g.filter((a) => !used.has(a.id) && !a.openingBalance);
+    if (!empty.length) continue;
+    const keepOne = empty.length === g.length; // all empty → keep one of them
+    const keep = keepOne ? [...empty].sort((a, b) => Number(b.currency === baseCurrency) - Number(a.currency === baseCurrency) || a.createdAt - b.createdAt)[0] : undefined;
+    out.push(...empty.filter((a) => a !== keep));
+  }
+  return out;
+}
+
 const KIND_ICON: Record<AccountKind, string> = { cash: 'banknote', bank: 'landmark', card: 'credit-card', wallet: 'smartphone', other: 'wallet' };
 
 export function AccountsPage() {
   const { t } = useTranslation();
-  const { accounts, transactions, ctx, money } = useData();
+  const { accounts, transactions, recurring, templates, bills, settings, ctx, money } = useData();
+  const toast = useToast();
   const openAdd = useQuickAdd();
   const [edit, setEdit] = useState<Partial<Account> | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const list = accounts.filter((a) => showArchived || !a.archived);
+  const used = new Set([...transactions, ...recurring, ...templates, ...bills].flatMap((x) => [x.accountId, 'toAccountId' in x ? x.toAccountId : undefined]).filter((x): x is string => !!x));
+  const dupes = emptyDuplicates(accounts, used, settings.baseCurrency);
+  const removeDupes = async () => {
+    if (!confirm(t('acc.dedupeConfirm', { count: dupes.length }))) return;
+    const undo = await remove('accounts', dupes.map((a) => a.id));
+    toast(t('acc.dedupeDone', { count: dupes.length }), undo);
+  };
 
   const move = async (a: Account, dir: -1 | 1) => {
     const i = list.indexOf(a);
@@ -47,6 +78,9 @@ export function AccountsPage() {
           <ArrowLeftRight size={14} /> {t('tx.transfer')}
         </Button>
       </Card>
+      {dupes.length > 0 && (
+        <Button variant="soft" block className="mb-3" onClick={removeDupes}><Trash2 size={16} /> {t('acc.dedupe', { count: dupes.length })}</Button>
+      )}
       {!list.length && <EmptyState icon={<Wallet size={36} />} title={t('empty.noAccounts')} text={t('empty.noAccountsText')} />}
       <div className="space-y-2">
         {list.map((a, i) => (

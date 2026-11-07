@@ -49,9 +49,36 @@ export interface SyncState {
   /** Set while waiting for the user to decide what to do with another account's local data. */
   conflictEmail?: string;
   recovery?: boolean; // arrived via password-reset link
+  /** Supabase has told us whether a session exists (first auth event received). */
+  authReady: boolean;
+  /** The signed-in account's cloud data has been pulled at least once (or we're offline with a cache). */
+  cloudReady: boolean;
+  /** Where data lives — chosen per device at sign-in or in Settings → Cloud sync. */
+  mode: StorageMode;
 }
 
-let state: SyncState = { status: syncEnabled ? 'signed-out' : 'off', user: null };
+/**
+ * Two storage modes, switchable any time:
+ *  - 'cloud': an account is required; the account (Supabase) holds the data and this device
+ *    keeps a cache for speed and offline use. Signing out clears the device.
+ *  - 'local': no account; everything stays on this device only.
+ * Without Supabase configured, only 'local' exists.
+ */
+export type StorageMode = 'cloud' | 'local';
+const MODE_KEY = 'moneta.storageMode';
+function savedMode(): StorageMode {
+  if (!syncEnabled) return 'local';
+  try { return localStorage.getItem(MODE_KEY) === 'local' ? 'local' : 'cloud'; } catch { return 'cloud'; }
+}
+function saveMode(m: StorageMode) {
+  try { localStorage.setItem(MODE_KEY, m); } catch { /* ignore */ }
+}
+
+const initialMode = savedMode();
+let state: SyncState = {
+  status: syncEnabled ? 'signed-out' : 'off', user: null, mode: initialMode,
+  authReady: initialMode === 'local', cloudReady: initialMode === 'local',
+};
 const listeners = new Set<() => void>();
 const set = (patch: Partial<SyncState>) => { state = { ...state, ...patch }; listeners.forEach((l) => l()); };
 export const getSyncState = () => state;
@@ -133,18 +160,57 @@ export async function updatePassword(password: string) {
 }
 
 /**
- * Sign out. `wipe` also removes this account's data from the device (shared computer);
- * otherwise data stays and keeps working offline.
+ * Switch storage mode.
+ *  - to 'local': stop syncing and leave the account; this device keeps all its data and works
+ *    on its own from now on (the cloud copy stays in the account, untouched).
+ *  - to 'cloud': the app asks for sign-in; after signing in, this device's data is uploaded
+ *    to the account and merged with what's already there.
  */
-export async function signOut(wipe = false) {
+export async function setStorageMode(m: StorageMode) {
+  if (!syncEnabled) return;
+  saveMode(m);
+  if (m === 'local') {
+    if (state.user) await runSync().catch(() => {}); // last upload, so the account is up to date
+    stopLive();
+    await supabase?.auth.signOut();
+    set({ mode: 'local', status: 'signed-out', user: null, error: undefined, conflictEmail: undefined, authReady: true, cloudReady: true });
+  } else {
+    set({ mode: 'cloud', authReady: true, cloudReady: !!state.user });
+  }
+}
+
+/** Leave the account without touching this device's data (used when declining an account-switch). */
+export async function cancelSignIn() {
   stopLive();
   await supabase?.auth.signOut();
-  set({ status: syncEnabled ? 'signed-out' : 'off', user: null, error: undefined, conflictEmail: undefined });
-  if (wipe) {
-    await db.delete();
-    try { localStorage.removeItem('moneta.theme'); } catch { /* ignore */ }
-    location.assign('/');
+  set({ status: syncEnabled ? 'signed-out' : 'off', user: null, error: undefined, conflictEmail: undefined, cloudReady: state.mode === 'local' });
+}
+
+/** Changes on this device that the cloud doesn't have yet. */
+export async function hasUnsyncedChanges() {
+  const since = (await db.settings.get('app'))?.lastSyncAt ?? 0;
+  for (const t of SYNC_TABLES) if (await db.table(t).where('updatedAt').above(since).count()) return true;
+  return (await db.tombstones.where('deletedAt').above(since).count()) > 0;
+}
+
+/**
+ * Sign out. Everything is uploaded first; then this device's copy is removed (the data
+ * stays in the account and comes back on the next sign-in, on any device).
+ * Returns false — without signing out — if there are changes that couldn't be uploaded
+ * (offline), unless `force`.
+ */
+export async function signOut(force = false): Promise<boolean> {
+  if (state.user) {
+    await runSync().catch(() => {});
+    if (!force && (await hasUnsyncedChanges())) return false;
   }
+  stopLive();
+  await supabase?.auth.signOut();
+  set({ status: syncEnabled ? 'signed-out' : 'off', user: null, error: undefined, conflictEmail: undefined, cloudReady: state.mode === 'local' });
+  await db.delete();
+  try { localStorage.removeItem('moneta.theme'); } catch { /* ignore */ }
+  location.assign('/');
+  return true;
 }
 
 /* ============================== Engine ============================== */
@@ -205,12 +271,13 @@ export function startSyncEngine() {
   started = true;
 
   const onUser = async (u: User | null) => {
-    if (!u) { stopLive(); set({ status: 'signed-out', user: null }); return; }
+    if (!u) { stopLive(); set({ status: 'signed-out', user: null, authReady: true, cloudReady: state.mode === 'local' }); return; }
     const user = toUser(u);
+    if (state.mode !== 'cloud') { saveMode('cloud'); set({ mode: 'cloud' }); } // signing in = cloud mode
     const local = await db.settings.get('app');
     // Another account's data on this device? Ask before mixing.
     if (local?.syncUserId && local.syncUserId !== user.id && (await hasLocalData())) {
-      set({ status: 'conflict', user, conflictEmail: user.email });
+      set({ status: 'conflict', user, conflictEmail: user.email, authReady: true, cloudReady: true });
       return;
     }
     await adopt(user);
@@ -218,6 +285,7 @@ export function startSyncEngine() {
 
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'PASSWORD_RECOVERY') set({ recovery: true });
+    if (event === 'INITIAL_SESSION' && !session) set({ authReady: true });
     const id = session?.user?.id ?? null;
     if (id !== (state.user?.id ?? null) || (event === 'INITIAL_SESSION' && id)) onUser(session?.user ?? null);
   });
@@ -233,9 +301,13 @@ async function adopt(user: SyncUser) {
     if (!profile.name && user.name) profile.name = user.name;
     await db.settings.put({ ...local, syncUserId: user.id, profile, updatedAt: local.profile.name === profile.name ? local.updatedAt : Date.now() });
   }
-  set({ user, status: 'idle', conflictEmail: undefined });
+  set({ user, status: 'idle', conflictEmail: undefined, authReady: true });
   startLive(user.id);
-  await runSync();
+  // Pull the account's data before the app decides anything (e.g. whether setup is needed),
+  // so a new device never creates its own default accounts next to the cloud ones.
+  // A slow network must not keep the app closed: after a few seconds open with the cached copy.
+  await Promise.race([runSync(), new Promise((r) => setTimeout(r, 8000))]);
+  set({ cloudReady: true });
 }
 
 async function hasLocalData() {

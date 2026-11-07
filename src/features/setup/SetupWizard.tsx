@@ -6,7 +6,7 @@ import { isNative } from '@/lib/native';
 import { downloadApk } from '@/lib/appUpdate';
 import { BrandBanner, BrandMark } from '@/components/Brand';
 import { AuthScreen } from '../auth/AuthScreen';
-import { scheduleSync, syncEnabled } from '@/lib/sync';
+import { scheduleSync, syncEnabled, useSync } from '@/lib/sync';
 import { db } from '@/db/db';
 import { COUNTRIES, CATEGORY_SETS, countryName } from '@/db/defaults';
 import type { DigitStyle, Grouping, Settings } from '@/db/types';
@@ -35,6 +35,7 @@ export function SetupWizard({ settings }: { settings: Settings }) {
   const [demo, setDemo] = useState(false);
   const [busy, setBusy] = useState(false);
   const [auth, setAuth] = useState(false);
+  const sync = useSync();
   const patch = (p: Partial<Settings>) => setS((x) => ({ ...x, ...p }));
   const pickStyle = (style: Settings['style']) => { patch({ style }); applyTheme({ style, mode: s.theme, accent: s.accent }, true); };
 
@@ -98,7 +99,7 @@ export function SetupWizard({ settings }: { settings: Settings }) {
             ))}
           </div>
           <p className="mt-3 text-xs text-muted">{t('setup.langHint')}</p>
-          {syncEnabled && (
+          {syncEnabled && sync.mode === 'local' && (
             <button onClick={() => setAuth(true)} className="m-card mt-5 flex w-full items-center gap-3 p-4 text-start transition active:scale-[.98]">
               <span className="grid h-10 w-10 place-items-center rounded-xl text-white" style={{ background: 'var(--brand-grad)' }}><LogIn size={18} /></span>
               <span className="flex-1"><b className="block text-sm">{t('auth.haveAccount')}</b><span className="text-xs text-muted">{t('auth.haveAccountText')}</span></span>

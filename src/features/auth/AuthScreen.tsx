@@ -1,12 +1,14 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, CheckCircle2, Cloud, Eye, EyeOff, Globe2, KeyRound, Loader2, Lock, Mail, ShieldCheck, Sparkles, UserRound, WifiOff } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Cloud, Eye, EyeOff, Globe2, KeyRound, Loader2, Lock, Mail, ShieldCheck, HardDrive, Smartphone, Sparkles, UserRound, WifiOff } from 'lucide-react';
 import { BrandBanner, BrandMark, CoBrand, MadeBy, OrbitLogo } from '@/components/Brand';
 import { Aurora, haptic } from '@/components/motion';
 import { Segmented } from '@/components/ui';
 import { cx } from '@/lib/utils';
+import { isNative } from '@/lib/native';
+import { downloadApk } from '@/lib/appUpdate';
 import {
-  authProviders, resendConfirmation, sendPasswordReset, signInWithGoogle, signInWithPassword, signUp, syncEnabled, updatePassword, useSync,
+  authProviders, setStorageMode, resendConfirmation, sendPasswordReset, signInWithGoogle, signInWithPassword, signUp, syncEnabled, updatePassword, useSync,
 } from '@/lib/sync';
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'reset';
@@ -14,7 +16,7 @@ type Mode = 'signin' | 'signup' | 'forgot' | 'reset';
 /**
  * Sign in / create account / reset password — backed by Supabase Auth.
  * Desktop: split screen with an animated brand panel. Phone: logo on top, card below.
- * Always offers "Continue without an account" (the app is fully usable offline).
+ * Cloud mode (default when Supabase is configured): sign in, or switch this device to "local only".
  */
 export function AuthScreen({ onDone, onSkip, initialMode }: { onDone: () => void; onSkip?: () => void; initialMode?: Mode }) {
   const { t } = useTranslation();
@@ -186,7 +188,22 @@ export function AuthScreen({ onDone, onSkip, initialMode }: { onDone: () => void
           </div>
         </div>
 
-        {onSkip && syncEnabled && (
+        {!onSkip && syncEnabled && sync.mode === 'cloud' && (
+          <div className="mt-6 w-full max-w-md">
+            <p className="text-center text-xs text-muted">{t('auth.requiredNote')}</p>
+            <button onClick={() => setStorageMode('local')} className="m-card mt-3 flex w-full items-center gap-3 p-4 text-start transition active:scale-[.98]">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ink/10 text-ink"><HardDrive size={18} /></span>
+              <span className="min-w-0 flex-1"><b className="block text-sm">{t('storage.localTitle')}</b><span className="text-xs text-muted">{t('storage.localDesc')}</span></span>
+              <ArrowRight size={16} className="text-muted rtl:rotate-180" />
+            </button>
+          </div>
+        )}
+        {!isNative && (
+          <button onClick={() => downloadApk()} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand transition hover:opacity-80">
+            <Smartphone size={15} /> {t('update.getApp')}
+          </button>
+        )}
+        {onSkip && syncEnabled && sync.mode === 'local' && (
           <button onClick={onSkip} className="group mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
             <WifiOff size={15} /> {t('auth.skip')} <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5 rtl:rotate-180" />
           </button>

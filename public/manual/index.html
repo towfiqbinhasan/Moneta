@@ -127,7 +127,7 @@
     <img src="../brand/th-badge-128.png" alt="TH Team" />
     <div><small>Designed &amp; developed by</small><b>MD. Towfiq Bin Hasan</b><span>TH Team · towfiqbinhasan.com</span></div>
   </a>
-  <div class="meta">Moneta v1.3 · Web app and Android app · moneta-th.vercel.app</div>
+  <div class="meta">Moneta v1.3 · Web app &amp; Android APK · moneta-three-wheat.vercel.app · moneta-th.vercel.app</div>
 </section>
 
 <!-- ======================= CONTENTS ======================= -->
@@ -170,7 +170,7 @@
     <li><b>Plan</b> with budgets ("max ৳2,500 for fun this month") and savings goals ("new laptop").</li>
     <li><b>Never forget</b> bills, loans and money friends owe you.</li>
     <li><b>Any currency</b>: Taka, Rupee, Dollar, Euro and many more, even mixed together.</li>
-    <li><b>Works without internet.</b> Your data stays on your phone unless you choose to sign in.</li>
+    <li><b>You choose where your data lives:</b> in your account (the same data on every phone and computer), or only on this device without any account. You can switch any time.</li>
   </ul>
   <div class="tip"><b>Good to know</b>The pictures in this manual use sample ("demo") data and the Taka (৳) currency. Your screen shows your own numbers.</div>
 </section>
@@ -182,13 +182,13 @@
 
   <h3>Option A: Website (any phone or computer)</h3>
   <ol>
-    <li>Open <a href="https://moneta-th.vercel.app"><b>moneta-th.vercel.app</b></a> in Chrome, Edge, Safari or Firefox.</li>
+    <li>Open <a href="https://moneta-three-wheat.vercel.app"><b>moneta-three-wheat.vercel.app</b></a> (or <a href="https://moneta-th.vercel.app"><b>moneta-th.vercel.app</b></a>) in Chrome, Edge, Safari or Firefox.</li>
     <li>That's it. To keep it like an app, use the browser menu → <span class="ui">Install app</span> or <span class="ui">Add to Home screen</span>.</li>
   </ol>
 
   <h3>Option B: Android app (APK)</h3>
   <ol>
-    <li>On your Android phone, open the website and tap <span class="ui">Download</span> on the "Get Moneta for Android" banner. You can also go to <b>Settings → Download Android app (APK)</b>, or use this link:<br />
+    <li>On your Android phone, open the website and tap <span class="ui">Download</span> on the "Get Moneta for Android" banner. You can also go to <b>Settings → Download Android app (APK)</b>, or download directly from GitHub Releases:<br />
       <a href="https://github.com/towfiqbinhasan/Moneta/releases/latest/download/Moneta.apk">github.com/towfiqbinhasan/Moneta/releases/latest</a></li>
     <li>Open the downloaded file <b>Moneta.apk</b>.</li>
     <li>If Android says <i>"For your security, your phone is not allowed to install unknown apps"</i>, tap <span class="ui">Settings</span>, turn on <span class="ui">Allow from this source</span>, then go back.</li>
@@ -197,9 +197,11 @@
 
   <h3>Updating the Android app</h3>
   <ul>
+    <li><b>Safe in-place updates:</b> Moneta is signed with an official permanent release key. When you install an updated APK, all your local data, categories, and settings stay completely safe.</li>
+    <li><b>Automated Cloud Builds:</b> Every release is automatically built and tested through GitHub Actions CI/CD with verified Android SDK &amp; Java environments.</li>
+    <li><b>Deep Linking:</b> The app includes native deep linking (<code>app.moneta.tracker://auth-callback</code>) so Google and email sign-ins return seamlessly back into the app.</li>
     <li>When a new version is out, a blue bar appears at the top: <span class="ui">New version available</span>. Tap <span class="ui">Update</span>, then <span class="ui">Install</span>.</li>
     <li>You can check yourself any time: <b>Settings → scroll to the bottom → Check for updates</b>.</li>
-    <li>Updating keeps all your data.</li>
   </ul>
   <div class="warn"><b>Only download from the links above</b>Moneta APKs from other places may be fake.</div>
 </section>
@@ -214,7 +216,7 @@
     <div>
       <h3>Step 1: Choose your language</h3>
       <p>Tap <b>English</b>, <b>বাংলা</b>, Deutsch, Norsk or हिन्दी, then tap <span class="ui">Continue</span>. You can change it later.</p>
-      <p><b>Already used Moneta on another device?</b> Tap <span class="ui">Already have an account?</span> and sign in. Your data comes back and setup is skipped.</p>
+      <p><b>First, the sign-in screen.</b> Sign in (or create a free account) to keep your data in your account. If you already used Moneta on another device, all your data comes back and these setup steps are skipped. Don't want an account? Tap <span class="ui">This device only</span> below the sign-in box.</p>
       <p>On the website you also see <span class="ui">Get Moneta for Android</span> here.</p>
     </div>
   </div>
@@ -554,7 +556,7 @@
   </div>
   <ul>
     <li><b>Appearance:</b> style (Receipt / Glass / Brutal), Light, Dark or Auto, and your favourite colour.</li>
-    <li><b>Profile:</b> your name and photo.</li>
+    <li><b>Profile &amp; Photos:</b> your name and avatar picture. Pictures (avatars and expense receipt photos) are compressed automatically on your device into compact Base64 format (under 30 KB). They open instantly with zero loading delay and require no expensive external cloud storage!</li>
     <li><b>Dashboard widgets:</b> show, hide and reorder the cards on Home.</li>
     <li><b>App lock:</b> ask for a <b>PIN</b> (4–6 digits; fingerprint or face also works if your device supports it) every time Moneta opens. Choose a PIN you will remember!</li>
     <li><b>Daily reminder:</b> a notification at your chosen time if you have not added anything that day.</li>
@@ -571,7 +573,7 @@
         <tr><td>Import CSV</td><td>Bring in entries from a bank statement or another app.</td></tr>
         <tr><td>Load demo data</td><td>Adds 3 months of sample entries to try the app.</td></tr>
         <tr><td>Remove demo data</td><td>Removes <b>only</b> the sample entries. Your own entries stay.</td></tr>
-        <tr><td>Delete all data</td><td>Erases everything on this device. You must type DELETE to confirm.</td></tr>
+        <tr><td>Delete all data</td><td>Erases the data on this device (with an account it also signs you out, and the account keeps its copy). You must type DELETE to confirm.</td></tr>
       </table>
       <div class="warn"><b>Make a backup first</b>"Delete all data" and "Restore" cannot be undone.</div>
     </div>
@@ -581,7 +583,14 @@
 <!-- ======================= 19 ======================= -->
 <section class="card" id="sync">
   <h2><span class="n">19</span>Sign in &amp; use on many devices</h2>
-  <p class="lead">Signing in is <b>optional</b>. Do it if you want a safe copy in the cloud, or want the same data on your phone and computer.</p>
+  <p class="lead">With an account, everything you add is saved in your account, so you can sign in on <b>any</b> phone or computer and see the same data. Changing or losing a phone does not lose your data.</p>
+  <h3>Choose: account or this device only</h3>
+  <p><b>Settings → Cloud sync → Where is your data saved?</b></p>
+  <ul>
+    <li><b>Cloud (your account):</b> saved in your account and on every device you sign in on.</li>
+    <li><b>This device only:</b> no account. Data stays on this phone or browser only.</li>
+    <li>Switching to <b>cloud</b> asks you to sign in, then uploads this device's data to your account. Switching to <b>this device only</b> signs you out but keeps all data on this device.</li>
+  </ul>
   <div class="pair">
     <figure><img class="phone" src="img/24-settings-sync.jpg" alt="Cloud sync" /><figcaption>Settings → Cloud sync</figcaption></figure>
     <figure><img class="phone" src="img/25-signin.jpg" alt="Sign in" /><figcaption>Sign in / create account</figcaption></figure>
@@ -593,23 +602,27 @@
     <li>On your other phone or computer, sign in with the <b>same account</b>. Your data appears there too, and every change shows up on all devices within seconds.</li>
   </ol>
   <ul>
-    <li><b>Forgot your password?</b> Tap <span class="ui">Forgot password?</span> and follow the e-mail.</li>
-    <li><b>Sync status</b> shows at the top (computer) and in Settings: <i>Synced</i>, <i>Syncing…</i> or <i>Offline</i>. Offline is fine: changes are sent when the internet is back.</li>
-    <li><b>Sign out:</b> tap your picture → <span class="ui">Sign out</span>. You choose to <b>keep</b> the data on this device or <b>remove</b> it (use "remove" on a shared computer).</li>
+    <li><b>Forgot your password?</b> Tap <span class="ui">Forgot password?</span> and enter your email. Moneta sends a password reset link pointing directly to your live app (e.g. <code>moneta-three-wheat.vercel.app</code>). Tap it on your phone or computer to set a new password, then log back into the app smoothly.</li>
+    <li><b>Realtime Multi-Device Sync:</b> Every change you make on your phone (like adding an expense) instantly syncs to your desktop browser and vice versa via Supabase Realtime without manual refreshing.</li>
+    <li><b>Sync status</b> shows at the top (computer) and in Settings: <i>Synced</i>, <i>Syncing…</i> or <i>Offline</i>. Offline is fine: changes are saved locally and sent automatically when the internet is back.</li>
+    <li><b>Sign out:</b> tap your picture → <span class="ui">Sign out</span>. Moneta first uploads your latest changes, then removes the data from this device only. Sign in again (here or anywhere) to get it all back.</li>
   </ul>
 </section>
 
 <!-- ======================= 20 ======================= -->
 <section class="card" id="data">
-  <h2><span class="n">20</span>Where your data is kept</h2>
+  <h2><span class="n">20</span>Where your data is kept (Local-First Privacy)</h2>
+  <p class="lead">Moneta uses a modern <b>Local-First architecture</b>. Your device is the primary home for your data, giving you instant speed and complete offline freedom.</p>
   <table>
-    <tr><th>If you…</th><th>Your data is kept…</th></tr>
-    <tr><td>do <b>not</b> sign in</td><td>only <b>on this phone or in this browser</b>. Nobody else can see it, and it works without internet. If you uninstall the app or clear the browser data, it is gone, so make a <b>Backup</b>.</td></tr>
-    <tr><td><b>sign in</b></td><td>on your device <b>and</b> in your private cloud account. Only you can read it. A new phone gets everything back when you sign in.</td></tr>
+    <tr><th>Where</th><th>What is kept there</th></tr>
+    <tr><td><b>This phone / browser (IndexedDB)</b></td><td><b>Your local database:</b> 16 structured tables storing all transactions, categories, budgets, and compressed photos right inside your device's memory. Works 100% offline with zero latency.</td></tr>
+    <tr><td><b>Your account (Supabase Cloud)</b></td><td><b>Your secure encrypted mirror:</b> Backs up your entries, accounts, budgets, goals, and settings. Protected by Postgres Row-Level Security (RLS) so only your authenticated user ID can access it.</td></tr>
+    <tr><td><b>App Lock PIN (Local only)</b></td><td><b>Never uploaded to cloud:</b> Your security PIN and biometric keys stay strictly locked inside your device for maximum privacy.</td></tr>
   </table>
   <h3>Keep your money diary safe</h3>
   <ul>
-    <li>Make a <b>Backup</b> about once a month, or sign in.</li>
+    <li><b>Tombstone delete protection:</b> When you delete an item, Moneta logs a smart deletion marker so multi-device sync never accidentally revives deleted data.</li>
+    <li>Your account already keeps a copy. A <b>Backup</b> file now and then is still a good extra safety net.</li>
     <li>Turn on <b>App lock</b> if other people use your phone.</li>
     <li>Moneta never asks for your bank password or card number. It only stores what you type into it.</li>
   </ul>
@@ -646,15 +659,18 @@
   <h2><span class="n">22</span>Questions &amp; problems</h2>
   <table>
     <tr><th>Question</th><th>Answer</th></tr>
-    <tr><td>Do I need internet?</td><td>No. Moneta works offline. Internet is only needed for signing in, syncing, exchange rates and updates.</td></tr>
+    <tr><td>Do I need internet?</td><td>No for "This device only". With an account, only to sign in the first time on a device; after that Moneta also works offline and uploads your changes later.</td></tr>
     <tr><td>Is it free?</td><td>Yes.</td></tr>
     <tr><td>I added something wrong.</td><td>Tap the entry in <b>Transactions</b>, fix it and save. Or delete it (swipe left).</td></tr>
     <tr><td>My balance looks wrong.</td><td>Check the <b>opening balance</b> of each account (<b>More → Accounts</b>), and that transfers go between the right accounts.</td></tr>
     <tr><td>How do I remove the sample data?</td><td><b>Settings → Backup &amp; data → Remove demo data</b>.</td></tr>
-    <tr><td>I forgot my App lock PIN.</td><td>If you are signed in, reinstall the app (or clear the site data) and sign in again. Your data comes back from the cloud. If you are not signed in, the data cannot be opened without the PIN, so choose one you remember.</td></tr>
+    <tr><td>I forgot my App lock PIN.</td><td>With an account: reinstall the app (or clear the site data) and sign in again, everything comes back. Without an account, the data can't be opened without the PIN, so choose one you remember.</td></tr>
     <tr><td>Reminders don't show.</td><td>Allow notifications for Moneta in your phone's settings. In a browser, reminders only come while Moneta is open.</td></tr>
     <tr><td>The Android app won't install.</td><td>Allow "Install unknown apps" for your browser or Files app (see <a href="#get">section 2</a>).</td></tr>
-    <tr><td>I have a new phone.</td><td>If you are signed in, just sign in on the new phone. If not, make a <b>Backup</b> on the old phone and <b>Restore</b> it on the new one.</td></tr>
+    <tr><td>Will updating the APK delete my data?</td><td>No! The APK is signed with a permanent cryptographic key, so updates install directly over your existing app without touching your data.</td></tr>
+    <tr><td>How does password reset work?</td><td>Tap <b>Forgot password?</b> on the login screen. It sends a secure email link directing you to your live web app where you can set your new password, then sign right back into the mobile app.</td></tr>
+    <tr><td>Why do profile pictures and receipts work offline?</td><td>Photos are compressed into lightweight Base64 strings right on your phone, so they load in zero seconds even with no internet connection.</td></tr>
+    <tr><td>I have a new phone.</td><td>With an account: install Moneta and sign in, everything is there. Without an account: make a <b>Backup</b> on the old phone and <b>Restore</b> it on the new one (or switch to Cloud first).</td></tr>
     <tr><td>Data is missing on my other device.</td><td>Make sure both are signed in to the <b>same</b> account and connected to the internet. Then tap <b>Settings → Cloud sync → Sync now</b>.</td></tr>
   </table>
 </section>

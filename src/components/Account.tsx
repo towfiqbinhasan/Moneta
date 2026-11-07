@@ -6,7 +6,7 @@ import { useData } from '@/hooks/useData';
 import { Avatar, Button } from './ui';
 import { Sheet } from './Sheet';
 import { useToast } from './Toast';
-import { resolveConflictReplace, signOut, syncNowManual, useSync, type SyncStatus } from '@/lib/sync';
+import { cancelSignIn, resolveConflictReplace, signOut, syncNowManual, useSync, type SyncStatus } from '@/lib/sync';
 import { cx } from '@/lib/utils';
 
 /** Account UI: sync status chip, avatar dropdown, sign-out choices, account-switch dialog. */
@@ -106,24 +106,26 @@ function MenuItem({ icon: Ico, children, onClick, danger, kbd }: { icon: typeof 
   );
 }
 
-/** Sign out: keep data on this device (default) or remove it (shared computer). */
+/** Sign out: everything is uploaded first, then this device's copy is removed (it stays in the account). */
 export function SignOutDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
-  const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const go = async (wipe: boolean) => {
+  const [unsynced, setUnsynced] = useState(false);
+  const go = async (force: boolean) => {
     setBusy(true);
-    await signOut(wipe);
+    const ok = await signOut(force);
     setBusy(false);
-    onClose();
-    if (!wipe) toast(t('auth.signedOut'));
+    if (!ok) setUnsynced(true); // offline with changes the cloud doesn't have yet
   };
   return (
     <Sheet open={open} onClose={onClose} title={t('auth.signOutTitle')}>
-      <p className="mb-4 text-sm text-muted">{t('auth.signOutText')}</p>
+      <p className="mb-4 text-sm text-muted">{t('auth.signOutCloud')}</p>
+      {unsynced && <p className="mb-4 rounded-xl bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">{t('auth.signOutUnsynced')}</p>}
       <div className="space-y-2 pb-2">
-        <Button block size="lg" disabled={busy} onClick={() => go(false)}><LogOut size={18} />{t('auth.signOutKeep')}</Button>
-        <Button block size="lg" variant="danger" disabled={busy} onClick={() => go(true)}>{t('auth.signOutWipe')}</Button>
+        {!unsynced
+          ? <Button block size="lg" disabled={busy} onClick={() => go(false)}><LogOut size={18} />{busy ? t('sync.status.syncing') : t('auth.signOut')}</Button>
+          : <Button block size="lg" variant="danger" disabled={busy} onClick={() => go(true)}><LogOut size={18} />{t('auth.signOutAnyway')}</Button>}
+        <Button block size="lg" variant="ghost" disabled={busy} onClick={onClose}>{t('common.cancel')}</Button>
       </div>
     </Sheet>
   );
@@ -136,11 +138,11 @@ export function ConflictDialog() {
   const [busy, setBusy] = useState(false);
   if (s.status !== 'conflict') return null;
   return (
-    <Sheet open onClose={() => signOut(false)} title={t('auth.conflictTitle')}>
+    <Sheet open onClose={() => cancelSignIn()} title={t('auth.conflictTitle')}>
       <p className="mb-4 text-sm text-muted">{t('auth.conflictText', { email: s.conflictEmail })}</p>
       <div className="space-y-2 pb-2">
         <Button block size="lg" disabled={busy} onClick={async () => { setBusy(true); await resolveConflictReplace(); setBusy(false); }}>{t('auth.conflictReplace')}</Button>
-        <Button block size="lg" variant="ghost" disabled={busy} onClick={() => signOut(false)}>{t('auth.conflictCancel')}</Button>
+        <Button block size="lg" variant="ghost" disabled={busy} onClick={() => cancelSignIn()}>{t('auth.conflictCancel')}</Button>
       </div>
     </Sheet>
   );

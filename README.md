@@ -70,7 +70,7 @@ Logo animations (`src/components/Brand.tsx`):
 
 ## Accounts & cloud sync (Supabase)
 
-- **Sign-in:** email/password, Google, password reset, and "Continue without an account".
+- **Sign-in & storage mode:** email/password, Google and password reset. Each device chooses where data lives (at sign-in, or Settings → Cloud sync): **Cloud** (default; the Supabase account holds all data, the device keeps a cache for speed and offline use, signing out uploads pending changes and then clears the device) or **This device only** (no account). Switching to Cloud uploads the device's data to the account.
 - **Desktop sign-in page:** a split-screen layout with the animated brand panel.
 - **Sync:** changes upload a few seconds after you make them, on focus or reconnect, and every minute. Changes from your other devices arrive instantly through **Realtime**.
 - **New device:** signing in on a new device downloads your settings and data, and setup is skipped.
