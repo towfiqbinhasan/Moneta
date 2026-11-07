@@ -25,7 +25,7 @@ export const supabase: SupabaseClient | null = syncEnabled
   : null;
 
 /** Device-local settings that never travel between devices. */
-const LOCAL_ONLY: (keyof Settings)[] = ['lock', 'lastSyncAt', 'lastPullAt', 'ratesFetchedAt', 'lastAccountId', 'syncUserId'];
+export const LOCAL_ONLY: (keyof Settings)[] = ['lock', 'lastSyncAt', 'lastPullAt', 'ratesFetchedAt', 'lastAccountId', 'syncUserId'];
 
 interface Row {
   user_id: string;
@@ -257,6 +257,9 @@ export async function resolveConflictReplace() {
 
 /* ============================== Sync core ============================== */
 
+const PULL_PAGE = 1000;
+const PULL_OVERLAP_MS = 60_000;
+
 export async function syncNow(): Promise<{ pushed: number; pulled: number }> {
   const sb = need();
   const user = (await sb.auth.getSession()).data.session?.user;
@@ -269,15 +272,26 @@ export async function syncNow(): Promise<{ pushed: number; pulled: number }> {
 
   // ---- Pull first, so newer remote edits are applied before we push ----
   let pulled = 0;
-  let from = 0;
   let pullMark = settings?.lastPullAt ?? '1970-01-01T00:00:00Z';
-  const pullSince = pullMark;
+  // Re-read a short overlap: an upsert that committed late can carry a synced_at just before our last mark.
+  // Re-applying rows is harmless (updatedAt decides), so overlap only costs a few duplicate reads.
+  const markMs = Date.parse(pullMark);
+  let cursor = settings?.lastPullAt && Number.isFinite(markMs) ? new Date(markMs - PULL_OVERLAP_MS).toISOString() : pullMark;
+  /** Rows already handled at the cursor timestamp (one upsert batch shares one synced_at). */
+  let seenAtCursor = new Set<string>();
+  /** Rows applied from the cloud — not pushed straight back (that echo could overwrite a newer edit). */
+  const fromCloud = new Set<string>();
   for (;;) {
-    const { data, error } = await sb.from('records').select('*').gt('synced_at', pullSince).order('synced_at').range(from, from + 999);
+    // Cursor paging (not offsets): stable even when rows are re-stamped while we read.
+    const { data, error } = await sb.from('records').select('*').gte('synced_at', cursor)
+      .order('synced_at').order('tbl').order('id').limit(PULL_PAGE);
     if (error) throw error;
-    if (!data?.length) break;
-    for (const row of data as Row[]) {
+    const fresh_ = ((data ?? []) as Row[]).filter((r) => !(r.synced_at === cursor && seenAtCursor.has(`${r.tbl}:${r.id}`)));
+    if (!fresh_.length) break;
+    for (const row of fresh_) {
       if (row.synced_at && row.synced_at > pullMark) pullMark = row.synced_at;
+      if (row.synced_at !== cursor) { cursor = row.synced_at!; seenAtCursor = new Set(); }
+      seenAtCursor.add(`${row.tbl}:${row.id}`);
       if (row.tbl === 'settings') {
         const local = await db.settings.get('app');
         if (local && row.data && typeof row.data === 'object' && (fresh || row.updated_at > local.updatedAt)) {
@@ -293,26 +307,26 @@ export async function syncNow(): Promise<{ pushed: number; pulled: number }> {
       const local = (await table.get(row.id)) as Base | undefined;
       const tomb = await db.tombstones.get(`${row.tbl}:${row.id}`);
       if (row.deleted) {
-        if (local && local.updatedAt <= row.updated_at) { await table.delete(row.id); pulled++; }
+        if (local && local.updatedAt <= row.updated_at) { await table.delete(row.id); fromCloud.add(`${row.tbl}:${row.id}`); pulled++; }
       } else if (tomb && tomb.deletedAt >= row.updated_at) {
         // Deleted locally after the remote edit — keep it deleted (tombstone will be pushed).
       } else if (!local || local.updatedAt < row.updated_at) {
         if (row.data && typeof row.data === 'object') {
           await table.put(row.data);
           if (tomb) await db.tombstones.delete(tomb.key);
+          fromCloud.add(`${row.tbl}:${row.id}`);
           pulled++;
         }
       }
     }
-    if (data.length < 1000) break;
-    from += 1000;
+    if ((data?.length ?? 0) < PULL_PAGE) break;
   }
 
   // ---- Push local changes since last sync ----
   const push: Row[] = [];
   for (const tbl of SYNC_TABLES) {
     const changed = (await db.table(tbl).where('updatedAt').above(since).toArray()) as Base[];
-    for (const r of changed) push.push({ user_id: user.id, tbl, id: r.id, data: r, updated_at: r.updatedAt, deleted: false });
+    for (const r of changed) if (!fromCloud.has(`${tbl}:${r.id}`)) push.push({ user_id: user.id, tbl, id: r.id, data: r, updated_at: r.updatedAt, deleted: false });
   }
   for (const tomb of await db.tombstones.where('deletedAt').above(since).toArray()) {
     push.push({ user_id: user.id, tbl: tomb.table, id: tomb.recordId, data: null, updated_at: tomb.deletedAt, deleted: true });

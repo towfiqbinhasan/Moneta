@@ -203,6 +203,8 @@ const bn: Record<string, string> = {
   // Data
   'data.backup': 'ব্যাকআপ (JSON)', 'data.restore': 'রিস্টোর', 'data.exportAll': 'সব এক্সপোর্ট (CSV)', 'data.loadDemo': 'ডেমো ডেটা যোগ করুন',
   'data.demoLoaded': 'ডেমো ডেটা যোগ হয়েছে', 'data.restoreConfirm': 'রিস্টোর করলে বর্তমান সব ডেটা ব্যাকআপ দিয়ে বদলে যাবে। এগিয়ে যাবেন?',
+  'data.removeDemo': 'ডেমো ডেটা মুছুন', 'data.noDemo': 'কোনো ডেমো ডেটা পাওয়া যায়নি',
+  'data.removeDemoConfirm': '{{count}}টি ডেমো রেকর্ড মুছবেন? আপনার নিজের এন্ট্রি থাকবে।', 'data.demoRemoved': '{{count}}টি ডেমো রেকর্ড মুছে ফেলা হয়েছে',
   'data.restored': 'ব্যাকআপ রিস্টোর হয়েছে', 'data.reset': 'সব ডেটা মুছুন',
   'data.resetConfirm': 'এতে এই ডিভাইসের সবকিছু স্থায়ীভাবে মুছে যাবে। আগে ব্যাকআপ নিয়ে নিন! এগিয়ে যাবেন?',
   'data.resetType': 'নিশ্চিত করতে DELETE লিখুন',

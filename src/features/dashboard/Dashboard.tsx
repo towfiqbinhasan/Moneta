@@ -14,7 +14,7 @@ import { CountUp, stagger, haptic } from '@/components/motion';
 import { Icon } from '@/lib/icons';
 import { rangeFor, inRange } from '@/lib/period';
 import {
-  accountBalance, budgetStatus, byCategory, dailySeries, goalStatus, healthScore, insights, netWorth,
+  accountBalance, budgetStatus, debtLeft, byCategory, dailySeries, goalStatus, healthScore, insights, netWorth,
   periodSeries, toBase, totals, txIn, toCur,
 } from '@/lib/stats';
 import { dueItems } from '@/lib/notify';
@@ -447,7 +447,7 @@ function GoalsWidget() {
 function HealthWidget() {
   const { t } = useTranslation();
   const { transactions, budgets, debts, ctx } = useData();
-  const owed = debts.filter((x) => x.direction === 'owe').reduce((a, x) => a + toBase(Math.max(0, x.amount - x.payments.reduce((p, q) => p + q.amount, 0)), x.currency, ctx), 0);
+  const owed = debts.filter((x) => x.direction === 'owe').reduce((a, x) => a + toBase(debtLeft(x).left, x.currency, ctx), 0);
   const h = healthScore(transactions, budgets, owed, ctx);
   const color = h.score >= 70 ? '#16a34a' : h.score >= 45 ? '#eda100' : '#e34948';
   return (

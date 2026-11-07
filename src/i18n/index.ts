@@ -51,7 +51,7 @@ export function loadCustomLanguages(list: CustomLanguage[]) {
 }
 
 export function allLanguages(custom: CustomLanguage[]): LangInfo[] {
-  const out = [...BUILTIN];
+  const out = BUILTIN.map((l) => ({ ...l })); // copies: a custom RTL setting must not leak into BUILTIN
   for (const c of custom) {
     const b = out.find((x) => x.code === c.code);
     if (b) b.dir = c.dir;

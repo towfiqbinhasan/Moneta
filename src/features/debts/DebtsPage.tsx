@@ -9,13 +9,12 @@ import { ProgressBar } from '@/components/Progress';
 import { useToast } from '@/components/Toast';
 import { parseAmount } from '@/lib/format';
 import { isoDay } from '@/lib/period';
-import { toBase } from '@/lib/stats';
+import { debtLeft, toBase } from '@/lib/stats';
 import { remove, save, update } from '@/db/repo';
 import { uid } from '@/lib/utils';
 import type { Debt } from '@/db/types';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 
-const paidOf = (d: Debt) => d.payments.reduce((a, p) => a + p.amount, 0);
 
 export function DebtsPage() {
   const { t } = useTranslation();
@@ -25,8 +24,8 @@ export function DebtsPage() {
   const [pay, setPay] = useState<Debt | null>(null);
   const [showSettled, setShowSettled] = useState(false);
 
-  const outstanding = (k: 'owe' | 'owed') => debts.filter((d) => d.direction === k).reduce((a, d) => a + toBase(Math.max(0, d.amount - paidOf(d)), d.currency, ctx), 0);
-  const list = debts.filter((d) => d.direction === dir && (showSettled || paidOf(d) < d.amount));
+  const outstanding = (k: 'owe' | 'owed') => debts.filter((d) => d.direction === k).reduce((a, d) => a + toBase(debtLeft(d).left, d.currency, ctx), 0);
+  const list = debts.filter((d) => d.direction === dir && (showSettled || debtLeft(d).left > 0));
 
   return (
     <div>
@@ -39,8 +38,7 @@ export function DebtsPage() {
       {!list.length && <EmptyState icon={<HandCoins size={36} />} title={t('empty.noDebts')} />}
       <div className="space-y-2">
         {list.map((d) => {
-          const paid = paidOf(d);
-          const left = d.amount - paid;
+          const { paid, left } = debtLeft(d);
           const days = d.dueDate ? differenceInCalendarDays(parseISO(d.dueDate), new Date()) : undefined;
           return (
             <Card key={d.id}>
@@ -70,7 +68,7 @@ export function DebtsPage() {
 
 function PaySheet({ debt, onClose }: { debt: Debt; onClose: () => void }) {
   const { t } = useTranslation();
-  const left = debt.amount - paidOf(debt);
+  const { left } = debtLeft(debt);
   const [amount, setAmount] = useState(String(left));
   const submit = async () => {
     const v = parseAmount(amount);

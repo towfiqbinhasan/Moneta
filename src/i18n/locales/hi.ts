@@ -203,6 +203,8 @@ const hi: Record<string, string> = {
   // Data
   'data.backup': 'बैकअप (JSON)', 'data.restore': 'रीस्टोर करें', 'data.exportAll': 'सब एक्सपोर्ट करें (CSV)', 'data.loadDemo': 'डेमो डेटा लोड करें',
   'data.demoLoaded': 'डेमो डेटा जोड़ दिया गया', 'data.restoreConfirm': 'रीस्टोर करने से मौजूदा सारा डेटा बैकअप से बदल जाएगा। आगे बढ़ें?',
+  'data.removeDemo': 'डेमो डेटा हटाएं', 'data.noDemo': 'कोई डेमो डेटा नहीं मिला',
+  'data.removeDemoConfirm': '{{count}} डेमो रिकॉर्ड हटाएं? आपकी अपनी एंट्री बनी रहेंगी।', 'data.demoRemoved': '{{count}} डेमो रिकॉर्ड हटाए गए',
   'data.restored': 'बैकअप रीस्टोर हो गया', 'data.reset': 'सारा डेटा डिलीट करें',
   'data.resetConfirm': 'इससे इस डिवाइस का सब कुछ हमेशा के लिए डिलीट हो जाएगा। पहले बैकअप ले लें! आगे बढ़ें?',
   'data.resetType': 'पक्का करने के लिए DELETE टाइप करें',

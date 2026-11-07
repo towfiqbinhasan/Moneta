@@ -7,12 +7,11 @@ import { Sheet } from '@/components/Sheet';
 import { ColorPicker, IconPicker } from '@/components/pickers';
 import { useToast } from '@/components/Toast';
 import { Icon } from '@/lib/icons';
-import { remove, save, update } from '@/db/repo';
+import { remapCategories, remove, save, update } from '@/db/repo';
 import { db } from '@/db/db';
 import type { Category } from '@/db/types';
 import { CATEGORY_SETS } from '@/db/defaults';
 import { seedCategories } from '@/db/demo';
-import { scheduleSync } from '@/lib/sync';
 
 export function CategoriesPage() {
   const { t } = useTranslation();
@@ -94,35 +93,12 @@ function CategoryForm({ initial, onClose }: { initial: Partial<Category>; onClos
     const ids = [initial.id, ...categories.filter((x) => x.parentId === initial.id).map((x) => x.id)];
     const used = transactions.filter((x) => x.categoryId && ids.includes(x.categoryId));
     if (used.length && !confirm(t('cat.deleteConfirm', { count: used.length }))) return;
-    // Transactions keep existing but become "uncategorised" (or move to parent if a subcategory is deleted).
+    // Entries keep existing but become "uncategorised" (or move to the parent if a subcategory is deleted).
+    // Recurring rules, templates, bills and budgets follow the same rule so nothing points at a dead id.
     const fallback = initial.parentId;
-    await db.transaction('rw', db.transactions, async () => {
-      for (const x of used) {
-        const rec = await db.transactions.get(x.id);
-        if (rec) {
-          if (fallback) rec.categoryId = fallback;
-          else delete rec.categoryId;
-          rec.updatedAt = Date.now();
-          await db.transactions.put(rec);
-        }
-      }
-    });
-    if (used.length) scheduleSync();
+    const moved = await remapCategories(ids, () => fallback);
     const undo = await remove('categories', ids);
-    toast(t('common.deleted'), async () => {
-      await undo();
-      await db.transaction('rw', db.transactions, async () => {
-        for (const x of used) {
-          const rec = await db.transactions.get(x.id);
-          if (rec) {
-            rec.categoryId = x.categoryId;
-            rec.updatedAt = Date.now();
-            await db.transactions.put(rec);
-          }
-        }
-      });
-      if (used.length) scheduleSync();
-    });
+    toast(t('common.deleted'), async () => { await undo(); await moved.undo(); });
     onClose();
   };
 
@@ -155,11 +131,19 @@ function PresetSheet({ onClose }: { onClose: () => void }) {
   const [preset, setPreset] = useState('standard');
   const [replace, setReplace] = useState(false);
   const apply = async () => {
+    const old = replace ? await db.categories.toArray() : [];
+    if (replace) await remove('categories', old.map((c) => c.id));
+    const fresh = await seedCategories(preset, t);
     if (replace) {
-      const ids = (await db.categories.toCollection().primaryKeys()) as string[];
-      await remove('categories', ids);
+      // Keep entries categorised: move each old category to the new one with the same name and kind.
+      const key = (c: Category) => `${c.kind}:${c.name.trim().toLowerCase()}`;
+      const byKey = new Map(fresh.map((c) => [key(c), c.id]));
+      const oldById = new Map(old.map((c) => [c.id, c]));
+      await remapCategories(old.map((c) => c.id), (id) => {
+        const c = oldById.get(id)!;
+        return byKey.get(key(c)) ?? (c.parentId && oldById.get(c.parentId) ? byKey.get(key(oldById.get(c.parentId)!)) : undefined);
+      });
     }
-    await seedCategories(preset, t);
     toast(t('cat.presetLoaded'));
     onClose();
   };

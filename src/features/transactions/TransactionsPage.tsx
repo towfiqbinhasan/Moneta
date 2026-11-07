@@ -46,7 +46,7 @@ export function TransactionsPage() {
         />
       ) : (
         <>
-          {desktop ? <TxTable txs={list.slice(0, limit)} /> : <TxGroupedList txs={list.slice(0, limit)} />}
+          {desktop ? <TxTable txs={list} limit={limit} /> : <TxGroupedList txs={list.slice(0, limit)} />}
           {list.length > limit && (
             <Button variant="soft" block className="mt-4" onClick={() => setLimit(limit + PAGE)}>{t('common.loadMore')}</Button>
           )}

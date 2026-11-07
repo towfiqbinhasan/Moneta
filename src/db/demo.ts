@@ -1,5 +1,7 @@
 import { addDays, format, subDays } from 'date-fns';
-import { db } from './db';
+import { db, SYNC_TABLES, type SyncTable } from './db';
+import { remove } from './repo';
+import { scheduleSync } from '@/lib/sync';
 import { CATEGORY_SETS, DEFAULT_ACCOUNTS } from './defaults';
 import type { Account, Bill, Budget, Category, Debt, Goal, GoalEntry, Recurring, Split, Template, Transaction, Trip } from './types';
 import { uid, round } from '@/lib/utils';
@@ -8,7 +10,9 @@ import { defaultDecimals } from '@/lib/currency';
 
 type T = (k: string) => string;
 const now = () => Date.now();
-const base = () => ({ id: uid(), createdAt: now(), updatedAt: now() });
+const plain = () => ({ id: uid(), createdAt: now(), updatedAt: now() });
+/** Every demo record carries `demo: true` so it can be removed later without touching real data. */
+const base = () => ({ ...plain(), demo: true });
 
 /** Insert a category set, translating names into the current language. */
 export async function seedCategories(preset: string, t: T) {
@@ -18,9 +22,9 @@ export async function seedCategories(preset: string, t: T) {
   let order = startOrder;
   for (const kind of ['expense', 'income'] as const) {
     for (const s of set[kind]) {
-      const parent: Category = { ...base(), name: t(`cat.${s.key}`), kind, icon: s.icon, color: s.color, order: order++ };
+      const parent: Category = { ...plain(), name: t(`cat.${s.key}`), kind, icon: s.icon, color: s.color, order: order++ };
       rows.push(parent);
-      for (const sub of s.subs ?? []) rows.push({ ...base(), name: t(`cat.${sub}`), kind, icon: s.icon, color: s.color, parentId: parent.id, order: order++ });
+      for (const sub of s.subs ?? []) rows.push({ ...plain(), name: t(`cat.${sub}`), kind, icon: s.icon, color: s.color, parentId: parent.id, order: order++ });
     }
   }
   await db.categories.bulkPut(rows);
@@ -29,7 +33,7 @@ export async function seedCategories(preset: string, t: T) {
 
 export async function seedAccounts(currency: string, t: T) {
   const rows: Account[] = DEFAULT_ACCOUNTS.map((a, i) => ({
-    ...base(), name: t(`acc.default.${a.key}`), kind: a.kind, currency, openingBalance: 0, icon: a.icon, color: a.color,
+    ...plain(), name: t(`acc.default.${a.key}`), kind: a.kind, currency, openingBalance: 0, icon: a.icon, color: a.color,
     order: i, archived: false, includeInTotal: true,
   }));
   await db.accounts.bulkPut(rows);
@@ -57,8 +61,11 @@ export async function seedDemo(currency: string, t: T) {
   const wallet: Account = { ...base(), name: 'Mobile Wallet', kind: 'wallet', currency, openingBalance: amt(40), icon: 'smartphone', color: '#e34948', order: accs.length, archived: false, includeInTotal: true };
   const usd: Account = { ...base(), name: 'USD Savings', kind: 'bank', currency: currency === 'USD' ? 'EUR' : 'USD', openingBalance: 500, icon: 'landmark', color: '#6250d6', order: accs.length + 1, archived: false, includeInTotal: true };
   await db.accounts.bulkPut([wallet, usd]);
-  await db.accounts.update(cash.id, { openingBalance: amt(120) });
-  await db.accounts.update(bank.id, { openingBalance: amt(1500) });
+  // Remember the real opening balances so "Remove demo data" can put them back.
+  const setOpening = (a: Account, v: number) =>
+    db.accounts.update(a.id, { openingBalance: v, demoOpening: a.demoOpening ?? a.openingBalance, demoBalance: v, updatedAt: now() });
+  await setOpening(cash, amt(120));
+  if (bank.id !== cash.id) await setOpening(bank, amt(1500));
 
   const top = (kind: 'expense' | 'income') => cats.filter((c) => c.kind === kind && !c.parentId);
   const byIcon = (icon: string, kind: 'expense' | 'income' = 'expense') => cats.find((c) => c.kind === kind && c.icon === icon && !c.parentId) ?? top(kind)[0];
@@ -145,4 +152,93 @@ export async function seedDemo(currency: string, t: T) {
 
   const trip: Trip = { ...base(), name: 'Trip to Bangkok', currency: currency === 'THB' ? 'USD' : 'THB', budget: 30000, startDate: isoDay(addDays(new Date(), 30)), endDate: isoDay(addDays(new Date(), 37)), active: false };
   await db.trips.put(trip);
+  scheduleSync(500);
+}
+
+/* ------------------------- Remove demo data ------------------------- */
+
+/** Demo rows loaded before records were tagged: the seeder's fixed names, created in one quick batch. */
+async function legacyDemo(): Promise<Partial<Record<SyncTable, string[]>>> {
+  const anchors = [
+    ...(await db.trips.filter((r) => r.demo === undefined && r.name === 'Trip to Bangkok').toArray()),
+    ...(await db.splits.filter((r) => r.demo === undefined && r.title === 'Dinner with friends').toArray()),
+  ];
+  if (!anchors.length) return {};
+  // seedDemo writes everything within a few seconds; the trip/split are written last.
+  const windows = anchors.map((a) => [a.createdAt - 30_000, a.createdAt + 2_000] as const);
+  const inWindow = (ts: number) => windows.some(([a, b]) => ts >= a && ts <= b);
+  const out: Partial<Record<SyncTable, string[]>> = {};
+  for (const tbl of SYNC_TABLES) {
+    if (tbl === 'categories') continue; // categories are never demo-only
+    const rows = (await db.table(tbl).toArray()) as (Account & { demo?: boolean })[];
+    const ids = rows
+      .filter((r) => r.demo === undefined && (inWindow(r.createdAt) || (tbl === 'budgets' && inWindow(r.updatedAt))))
+      .filter((r) => tbl !== 'accounts' || r.name === 'Mobile Wallet' || r.name === 'USD Savings')
+      .map((r) => r.id);
+    if (ids.length) out[tbl] = ids;
+  }
+  return out;
+}
+
+async function demoIds() {
+  const out: Partial<Record<SyncTable, string[]>> = await legacyDemo();
+  for (const tbl of SYNC_TABLES) {
+    const ids = (await db.table(tbl).filter((r: { demo?: boolean }) => r.demo === true).primaryKeys()) as string[];
+    if (ids.length) out[tbl] = [...new Set([...(out[tbl] ?? []), ...ids])];
+  }
+  return out;
+}
+
+/** Number of demo records currently on this device. */
+export async function countDemo() {
+  return Object.values(await demoIds()).reduce((n, ids) => n + ids.length, 0);
+}
+
+/**
+ * Deletes only demo records (synced deletions, so the cloud copy goes too) and restores
+ * the opening balances the demo changed. Demo accounts/goals that the user has since
+ * used for real entries are kept so nothing real is orphaned.
+ */
+export async function removeDemo() {
+  const ids = await demoIds();
+  const del = (tbl: SyncTable) => new Set(ids[tbl] ?? []);
+  const txGone = del('transactions');
+  const realTx = await db.transactions.filter((x) => !txGone.has(x.id)).toArray();
+  const usedAcc = new Set(realTx.flatMap((x) => [x.accountId, x.toAccountId ?? '']));
+  for (const tbl of ['recurring', 'templates', 'bills'] as const) {
+    const gone = del(tbl);
+    for (const r of await db.table(tbl).toArray()) if (!gone.has(r.id) && r.accountId) usedAcc.add(r.accountId);
+  }
+  const entryGone = del('goalEntries');
+  const usedGoal = new Set((await db.goalEntries.toArray()).filter((e) => !entryGone.has(e.id)).map((e) => e.goalId));
+  // Kept because real data uses them: from now on they count as the user's own.
+  const keep = async (tbl: 'accounts' | 'goals', used: Set<string>) => {
+    const list = ids[tbl] ?? [];
+    for (const id of list.filter((x) => used.has(x))) await db.table(tbl).update(id, { demo: false, updatedAt: Date.now() });
+    ids[tbl] = list.filter((x) => !used.has(x));
+  };
+  await keep('accounts', usedAcc);
+  await keep('goals', usedGoal);
+  // Trips that real entries belong to, and debts the user has since edited (e.g. recorded a payment).
+  const usedTrip = new Set(realTx.map((x) => x.tripId ?? ''));
+  const touched = new Set((await db.debts.toArray()).filter((d) => d.updatedAt - d.createdAt > 5_000).map((d) => d.id));
+  const keepT = async (tbl: 'trips' | 'debts', used: Set<string>) => {
+    const list = ids[tbl] ?? [];
+    for (const id of list.filter((x) => used.has(x))) await db.table(tbl).update(id, { demo: false, updatedAt: Date.now() });
+    ids[tbl] = list.filter((x) => !used.has(x));
+  };
+  await keepT('trips', usedTrip);
+  await keepT('debts', touched);
+
+  let n = 0;
+  for (const tbl of SYNC_TABLES) {
+    const list = ids[tbl];
+    if (list?.length) { await remove(tbl, list); n += list.length; }
+  }
+  for (const a of await db.accounts.filter((x) => x.demoOpening !== undefined).toArray()) {
+    // Put the real balance back only if the user hasn't set a new one since.
+    const untouched = a.demoBalance === undefined || a.openingBalance === a.demoBalance;
+    await db.accounts.update(a.id, { ...(untouched ? { openingBalance: a.demoOpening! } : {}), demoOpening: undefined, demoBalance: undefined, updatedAt: Date.now() });
+  }
+  return n; // records deleted
 }

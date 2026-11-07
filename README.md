@@ -20,7 +20,7 @@ npm run preview      # serve the production build (http://localhost:4173)
 ```
 
 The first launch opens a setup wizard (language → country → main currency → categories).
-Turn on **Load demo data** to explore the app with 3 months of sample entries.
+Turn on **Load demo data** to explore the app with 3 months of sample entries. **Settings → Data → Remove demo data** deletes only the sample entries later (your own entries stay).
 
 ## Features
 

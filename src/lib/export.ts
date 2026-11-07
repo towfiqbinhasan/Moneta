@@ -1,10 +1,10 @@
 import writeXlsxFile from 'write-excel-file';
-import { db, SYNC_TABLES } from '@/db/db';
+import { db, SYNC_TABLES, type SyncTable } from '@/db/db';
 import type { Account, Category, Settings, Transaction } from '@/db/types';
 import { download } from './utils';
 import { isNative } from './native';
 import { formatDate, formatMoney } from './format';
-import { scheduleSync } from './sync';
+import { LOCAL_ONLY, getSyncState, scheduleSync, signOut } from './sync';
 
 /** Exports (CSV / XLSX / PDF) and JSON backup & restore. */
 
@@ -112,18 +112,42 @@ export async function restoreJSON(file: File) {
   const data = JSON.parse(await file.text());
   if (data?.app !== 'moneta') throw new Error('Not a Moneta backup file');
   const tables = [...SYNC_TABLES, 'settings', 'rates', 'languages'] as const;
+  const now = Date.now();
   await db.transaction('rw', [...tables.map((t) => db.table(t)), db.tombstones], async () => {
+    const localSettings = await db.settings.get('app');
     for (const t of tables) {
       if (!Array.isArray(data[t])) continue;
-      await db.table(t).clear();
-      await db.table(t).bulkPut(data[t]);
+      const incoming = data[t] as Record<string, unknown>[];
+      if ((SYNC_TABLES as readonly string[]).includes(t)) {
+        // Records missing from the backup are deleted everywhere (tombstones), and restored ones get a
+        // fresh updatedAt so they are pushed and win over older cloud copies.
+        const keep = new Set(incoming.map((r) => r.id as string));
+        const dropped = ((await db.table(t).toCollection().primaryKeys()) as string[]).filter((id) => !keep.has(id));
+        await db.tombstones.bulkPut(dropped.map((id) => ({ key: `${t}:${id}`, table: t as SyncTable, recordId: id, deletedAt: now })));
+        await db.tombstones.bulkDelete([...keep].map((id) => `${t}:${id}`));
+        await db.table(t).clear();
+        await db.table(t).bulkPut(incoming.map((r) => ({ ...r, updatedAt: now })));
+      } else if (t === 'settings') {
+        // This device's sync bookkeeping (account, clocks, lock) is not part of the backup.
+        const keep = localSettings ? Object.fromEntries(LOCAL_ONLY.map((k) => [k, localSettings[k]])) : {};
+        await db.table(t).clear();
+        await db.table(t).bulkPut(incoming.map((r) => ({ ...r, ...keep, lastSyncAt: 0, updatedAt: now })));
+      } else {
+        await db.table(t).clear();
+        await db.table(t).bulkPut(incoming);
+      }
     }
-    await db.tombstones.clear();
   });
   scheduleSync(500);
 }
 
+/**
+ * Deletes everything on this device. When signed in, it also signs out — otherwise the next
+ * start would pull the whole account back from the cloud and quietly undo the reset.
+ * Cloud data itself is kept (delete it from another device or the account).
+ */
 export async function wipeAll() {
+  if (getSyncState().user) return signOut(true);
   await db.delete();
   location.reload();
 }

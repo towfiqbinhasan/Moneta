@@ -203,6 +203,8 @@ const de: Record<string, string> = {
   // Data
   'data.backup': 'Sicherung (JSON)', 'data.restore': 'Wiederherstellen', 'data.exportAll': 'Alles exportieren (CSV)', 'data.loadDemo': 'Demodaten laden',
   'data.demoLoaded': 'Demodaten hinzugefügt', 'data.restoreConfirm': 'Beim Wiederherstellen werden ALLE aktuellen Daten durch die Sicherung ersetzt. Fortfahren?',
+  'data.removeDemo': 'Demodaten entfernen', 'data.noDemo': 'Keine Demodaten gefunden',
+  'data.removeDemoConfirm': '{{count}} Demo-Einträge löschen? Deine eigenen Einträge bleiben erhalten.', 'data.demoRemoved': '{{count}} Demo-Einträge entfernt',
   'data.restored': 'Sicherung wiederhergestellt', 'data.reset': 'Alle Daten löschen',
   'data.resetConfirm': 'Damit wird alles auf diesem Gerät endgültig gelöscht. Erstelle vorher eine Sicherung! Fortfahren?',
   'data.resetType': 'Gib DELETE ein, um zu bestätigen',

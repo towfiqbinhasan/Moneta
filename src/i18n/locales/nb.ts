@@ -203,6 +203,8 @@ const nb: Record<string, string> = {
   // Data
   'data.backup': 'Sikkerhetskopi (JSON)', 'data.restore': 'Gjenopprett', 'data.exportAll': 'Eksporter alt (CSV)', 'data.loadDemo': 'Last inn demodata',
   'data.demoLoaded': 'Demodata lagt til', 'data.restoreConfirm': 'Gjenoppretting erstatter ALLE nåværende data med sikkerhetskopien. Vil du fortsette?',
+  'data.removeDemo': 'Fjern demodata', 'data.noDemo': 'Fant ingen demodata',
+  'data.removeDemoConfirm': 'Slette {{count}} demooppføringer? Dine egne oppføringer beholdes.', 'data.demoRemoved': 'Fjernet {{count}} demooppføringer',
   'data.restored': 'Sikkerhetskopien er gjenopprettet', 'data.reset': 'Slett alle data',
   'data.resetConfirm': 'Dette sletter alt på denne enheten for godt. Ta en sikkerhetskopi først! Vil du fortsette?',
   'data.resetType': 'Skriv DELETE for å bekrefte',

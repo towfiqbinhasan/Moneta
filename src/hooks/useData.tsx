@@ -7,7 +7,7 @@ import type {
 } from '@/db/types';
 import type { RateMap } from '@/lib/rates';
 import type { Ctx } from '@/lib/stats';
-import { formatMoney, formatDate, formatNumber, type MoneyOpts } from '@/lib/format';
+import { formatMoney, formatDate, formatNumber, setAmountDecimalSep, type MoneyOpts } from '@/lib/format';
 import { toBase } from '@/lib/stats';
 
 /**
@@ -65,6 +65,7 @@ export function DataProvider({ children, settings }: { children: ReactNode; sett
 
   const value = useMemo<Data | null>(() => {
     if (!all) return null;
+    setAmountDecimalSep(settings.decimalSep);
     const ctx: Ctx = { settings, rates: all.rates, categories: all.categories };
     return {
       ...all,

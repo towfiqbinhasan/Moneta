@@ -1,6 +1,7 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { Bill, Debt, Settings, Transaction } from '@/db/types';
 import { isoDay } from './period';
+import { debtLeft } from './stats';
 import { isNative, nativeDailyReminder, nativeNotify, nativeNotifyPermission } from './native';
 
 /**
@@ -31,9 +32,11 @@ let timer: number | undefined;
 /** Schedule today's (or tomorrow's) daily reminder while the app is running. */
 export function scheduleDailyReminder(s: Settings, title: string, body: string, hasEntryToday: () => Promise<boolean>) {
   window.clearTimeout(timer);
+  // A cleared time input gives '' → Invalid Date → setTimeout(NaN) fires instantly in a loop. Treat it as off.
+  const enabled = s.dailyReminder.enabled && /^\d{1,2}:\d{2}/.test(s.dailyReminder.time);
   // On a phone the OS schedules it, so it fires even when the app is closed.
-  if (isNative) return void nativeDailyReminder(s.dailyReminder.enabled, s.dailyReminder.time, title, body).catch(() => {});
-  if (!s.dailyReminder.enabled) return;
+  if (isNative) return void nativeDailyReminder(enabled, s.dailyReminder.time, title, body).catch(() => {});
+  if (!enabled) return;
   const [h, m] = s.dailyReminder.time.split(':').map(Number);
   const now = new Date();
   const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
@@ -62,10 +65,10 @@ export function dueItems(bills: Bill[], debts: Debt[], today = new Date()): DueI
   }
   for (const d of debts) {
     if (!d.remind || !d.dueDate) continue;
-    const paid = d.payments.reduce((a, p) => a + p.amount, 0);
-    if (paid >= d.amount) continue;
+    const { left } = debtLeft(d);
+    if (left <= 0) continue;
     const days = differenceInCalendarDays(parseISO(d.dueDate), today);
-    if (days <= 3) out.push({ kind: 'debt', id: d.id, name: d.person, amount: d.amount - paid, currency: d.currency, date: d.dueDate, days });
+    if (days <= 3) out.push({ kind: 'debt', id: d.id, name: d.person, amount: left, currency: d.currency, date: d.dueDate, days });
   }
   return out.sort((a, b) => a.days - b.days);
 }

@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet, Upload } from 'lucide-react';
@@ -62,7 +63,7 @@ export function parseCsv(text: string): string[][] {
 function parseDate(s: string, dmy: boolean): string | null {
   const t = s.match(/(\d{1,2}):(\d{2})/);
   const time = t ? `${t[1].padStart(2, '0')}:${t[2]}` : '12:00';
-  let m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  let m = s.match(/(\d{4})[./-](\d{1,2})[./-](\d{1,2})/);
   if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}T${time}`;
   m = s.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
   if (m) {
@@ -72,7 +73,7 @@ function parseDate(s: string, dmy: boolean): string | null {
     return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}T${time}`;
   }
   const d = new Date(s);
-  return isNaN(d.getTime()) ? null : `${d.toISOString().slice(0, 10)}T${time}`;
+  return isNaN(d.getTime()) ? null : `${format(d, 'yyyy-MM-dd')}T${time}`; // local day, not UTC
 }
 
 export function ImportCsv({ file, onClose }: { file: File | null; onClose: () => void }) {
@@ -110,14 +111,16 @@ export function ImportCsv({ file, onClose }: { file: File | null; onClose: () =>
     return {
       date: parseDate(get('date'), dmy),
       amount: Math.abs(raw),
-      type: type === 'transfer' ? 'expense' as const : type,
+      type,
       category: get('category').split(' / ').pop()?.trim() ?? '',
       account: get('account'),
       note: get('note'),
       tags: get('tags').split(/[\s,]+/).map((x) => x.replace(/^#/, '')).filter(Boolean),
       currency: get('currency').toUpperCase(),
     };
-  }).filter((x) => x.date && x.amount > 0), [rows, map, dmy]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Transfers can't be rebuilt from one CSV row (no destination account), so they are skipped
+  // instead of being turned into expenses with a junk "A → B" category.
+  }).filter((x): x is typeof x & { type: 'expense' | 'income' } => !!x.date && x.amount > 0 && x.type !== 'transfer'), [rows, map, dmy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const run = async () => {
     setBusy(true);

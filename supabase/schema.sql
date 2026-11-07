@@ -19,6 +19,11 @@ create index if not exists records_user_synced on public.records (user_id, synce
 -- last pull, even edits made offline long ago and uploaded later.
 create or replace function public.records_touch() returns trigger language plpgsql set search_path = '' as $$
 begin
+  -- Last write wins by the record's own clock: an older copy (e.g. a late echo from
+  -- another device) must not overwrite a newer edit already on the server.
+  if tg_op = 'UPDATE' and new.updated_at < old.updated_at then
+    return null;
+  end if;
   new.synced_at := now();
   return new;
 end $$;

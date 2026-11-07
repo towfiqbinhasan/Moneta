@@ -41,7 +41,10 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
   const [currency, setCurrency] = useState(init?.currency ?? (trip?.currency || account?.currency || settings.baseCurrency));
   const [categoryId, setCategoryId] = useState<string | undefined>(init?.categoryId);
   const [toAccountId, setToAccountId] = useState(init?.toAccountId ?? liveAccounts.find((a) => a.id !== accountId)?.id ?? '');
-  const [toAmountStr, setToAmountStr] = useState(editing?.toAmount ? String(editing.toAmount) : '');
+  const [toAmountStr, setToAmountStr] = useState(() => {
+    const from = accounts.find((a) => a.id === editing?.accountId), to = accounts.find((a) => a.id === editing?.toAccountId);
+    return editing?.toAmount && from && to && from.currency !== to.currency ? String(editing.toAmount) : '';
+  });
   const [date, setDate] = useState(editing?.date ?? isoDateTime(new Date()));
   const [note, setNote] = useState(init?.note ?? '');
   const [tags, setTags] = useState<string[]>(init?.tags ?? []);
@@ -51,6 +54,7 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
   const [repeat, setRepeat] = useState<Period | ''>('');
   const [asTemplate, setAsTemplate] = useState(false);
   const [shaking, setShaking] = useState(false);
+  const saving = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const amount = round(evalExpression(expr), defaultDecimals(currency));
@@ -93,9 +97,13 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
   const canSave = amount > 0 && !!accountId && !!date.trim() && (type !== 'transfer' || (!!toAccountId && toAccountId !== accountId));
 
   async function submit() {
+    if (saving.current) return;
     if (!canSave) { setShaking(true); setTimeout(() => setShaking(false), 450); haptic([15, 30, 15]); return; }
+    saving.current = true;
+    try {
+    const sameMoney = editing && editing.amount === amount && editing.currency === currency && editing.accountId === accountId;
     const accountAmount = type !== 'transfer' && account && account.currency !== currency
-      ? round(toCur(amount, currency, account.currency, ctx), defaultDecimals(account.currency))
+      ? (sameMoney && editing.accountAmount !== undefined ? editing.accountAmount : round(toCur(amount, currency, account.currency, ctx), defaultDecimals(account.currency)))
       : undefined;
     const data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'> & { id?: string } = {
       id: editing?.id,
@@ -105,7 +113,7 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
       accountId,
       accountAmount,
       toAccountId: type === 'transfer' ? toAccountId : undefined,
-      toAmount: type === 'transfer' ? (toAmountStr ? parseAmount(toAmountStr) : autoToAmount) : undefined,
+      toAmount: type === 'transfer' ? (crossTransfer && toAmountStr ? parseAmount(toAmountStr) : crossTransfer && sameMoney && editing.toAccountId === toAccountId && editing.toAmount ? editing.toAmount : autoToAmount) : undefined,
       categoryId: type === 'transfer' ? undefined : categoryId,
       date: date.trim() || isoDateTime(new Date()),
       note: note.trim(),
@@ -141,6 +149,7 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
       });
     }
     onClose();
+    } finally { saving.current = false; }
   }
 
   async function del() {
@@ -156,11 +165,13 @@ export function QuickAdd({ options, onClose }: { options: AddOptions; onClose: (
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const el = e.target as HTMLElement;
       if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable) return;
-      if (/^[0-9.+\-*/]$/.test(e.key)) {
+      if (/^[0-9.,+\-*/]$/.test(e.key)) {
         e.preventDefault();
-        setExpr((v) => v + (e.key === '*' ? '×' : e.key === '/' ? '÷' : e.key));
+        const k = e.key === '*' ? '×' : e.key === '/' ? '÷' : e.key === ',' ? '.' : e.key;
+        // One decimal point per number, like the on-screen numpad.
+        setExpr((v) => (k === '.' && /\.\d*$/.test(v) ? v : v + k));
       } else if (e.key === 'Backspace') setExpr((v) => v.slice(0, -1));
-      else if (e.key === 'Enter') submit();
+      else if (e.key === 'Enter' && el.tagName !== 'BUTTON') { e.preventDefault(); submit(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

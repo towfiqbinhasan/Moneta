@@ -63,15 +63,22 @@ export function formatMoney(value: number, currency: string, s: Settings, opts: 
     const units: [number, string][] = s.grouping === 'indian'
       ? [[1e7, 'Cr'], [1e5, 'L'], [1e3, 'K']]
       : [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
-    for (const [n, u] of units) if (abs >= n) { abs /= n; suffix = u; break; }
-    decimals = abs >= 100 ? 0 : 1;
+    let i = units.findIndex(([n]) => abs >= n);
+    const scaled = (k: number) => abs / units[k][0];
+    // Pick the unit after rounding, so 999,999 shows as "1M", not "1,000K".
+    if (i > 0 && Number(scaled(i).toFixed(scaled(i) >= 99.95 ? 0 : 1)) >= 1000) i--;
+    abs = scaled(i);
+    suffix = units[i][1];
+    decimals = abs >= 99.95 ? 0 : 1;
   }
   if (opts.trim && Number.isInteger(abs)) decimals = 0;
 
   const num = formatNumber(abs, decimals, s) + suffix;
   const gap = space ? ' ' : '';
   const body = position === 'before' ? symbol + gap + num : num + gap + symbol;
-  const sign = value < 0 ? '−' : opts.sign && value > 0 ? '+' : '';
+  // Sign of the value as displayed: -0.00000001 shows as "0.00", not "−0.00".
+  const shown = Number(abs.toFixed(decimals)) === 0 ? 0 : value;
+  const sign = shown < 0 ? '−' : opts.sign && shown > 0 ? '+' : '';
   return sign + body;
 }
 
@@ -87,8 +94,16 @@ export function formatDate(iso: string | Date, s: Pick<Settings, 'dateFormat' | 
   }
 }
 
-/** Parse a user-typed amount, accepting either '.' or ',' as decimal point and any digit script. */
-export function parseAmount(input: string): number {
+let userDecimalSep = '.';
+/** Called by the data provider so ambiguous input like "12,500" follows the user's number format. */
+export function setAmountDecimalSep(sep: string) { userDecimalSep = sep === ',' ? ',' : '.'; }
+
+/**
+ * Parse a user-typed amount, accepting either '.' or ',' as decimal point and any digit script.
+ * A single separator followed by exactly 3 digits is ambiguous ("12,500" / "1.234"); it is read
+ * with the user's decimal separator.
+ */
+export function parseAmount(input: string, decimalSep = userDecimalSep): number {
   if (!input) return 0;
   let s = String(input).trim();
   const isNegative = /^\(.*\)$/.test(s) || s.startsWith('-') || s.endsWith('-');
@@ -117,7 +132,7 @@ export function parseAmount(input: string): number {
     } else {
       const afterComma = s.slice(lastComma + 1);
       const beforeComma = s.slice(0, lastComma);
-      if (beforeComma !== '0' && beforeComma.length > 0 && afterComma.length === 3) {
+      if (decimalSep !== ',' && beforeComma !== '0' && beforeComma.length > 0 && afterComma.length === 3) {
         s = s.replace(/,/g, '');
       } else {
         s = s.replace(',', '.');
@@ -125,7 +140,8 @@ export function parseAmount(input: string): number {
     }
   } else if (lastDot !== -1) {
     const dotCount = (s.match(/\./g) || []).length;
-    if (dotCount > 1) {
+    const beforeDot = s.slice(0, lastDot);
+    if (dotCount > 1 || (decimalSep === ',' && beforeDot !== '0' && beforeDot.length > 0 && s.length - lastDot - 1 === 3)) {
       s = s.replace(/\./g, '');
     }
   }

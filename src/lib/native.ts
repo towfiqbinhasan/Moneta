@@ -57,12 +57,15 @@ export async function initNative(onAuthUrl: (url: string) => void) {
   });
 
   // Return from the system browser after Google sign-in.
-  App.addListener('appUrlOpen', ({ url }) => {
-    if (url.startsWith(AUTH_SCHEME + '://')) {
+  const handleUrl = (url?: string) => {
+    if (url?.startsWith(AUTH_SCHEME + '://')) {
       onAuthUrl(url);
       import('@capacitor/browser').then(({ Browser }) => Browser.close()).catch(() => {});
     }
-  });
+  };
+  App.addListener('appUrlOpen', ({ url }) => handleUrl(url));
+  // If Android killed the app while the browser was open, the link arrives as the launch URL instead.
+  App.getLaunchUrl().then((r) => handleUrl(r?.url)).catch(() => {});
 
   requestAnimationFrame(() => setTimeout(() => SplashScreen.hide({ fadeOutDuration: 250 }).catch(() => {}), 150));
 }

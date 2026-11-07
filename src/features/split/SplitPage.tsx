@@ -72,6 +72,8 @@ function SplitForm({ initial, onClose }: { initial: Partial<Split>; onClose: () 
   });
   const [people, setPeople] = useState<SplitParticipant[]>(initial.participants ?? [{ name: t('split.me'), share: 0, paid: true }, { name: '', share: 0, paid: false }]);
   const [makeDebts, setMakeDebts] = useState(!initial.id);
+  // What the user is typing in each custom share (so "12." or "0" can be typed); parsed into people[i].share.
+  const [shareText, setShareText] = useState<string[]>(() => (initial.participants ?? []).map((p) => (p.share ? String(p.share) : '')));
 
   const totalV = parseAmount(total);
   const dec = defaultDecimals(currency);
@@ -113,6 +115,7 @@ function SplitForm({ initial, onClose }: { initial: Partial<Split>; onClose: () 
           onChange={(m) => {
             if (m === 'custom' && mode === 'equal') {
               setPeople(people.map((p, i) => ({ ...p, share: shares[i] })));
+              setShareText(shares.map((x) => (x ? String(x) : '')));
             }
             setMode(m);
           }}
@@ -123,9 +126,9 @@ function SplitForm({ initial, onClose }: { initial: Partial<Split>; onClose: () 
             <div key={i} className="flex items-center gap-2">
               <Input value={p.name} onChange={(e) => setP(i, { name: e.target.value })} placeholder={t('split.name')} className="flex-1" />
               {mode === 'custom'
-                ? <Input inputMode="decimal" value={p.share || ''} onChange={(e) => setP(i, { share: parseAmount(e.target.value) })} className="w-28" />
+                ? <Input inputMode="decimal" value={shareText[i] ?? (p.share ? String(p.share) : '')} onChange={(e) => { const v = e.target.value; setShareText((s) => { const n = [...s]; n[i] = v; return n; }); setP(i, { share: parseAmount(v) }); }} className="w-28" />
                 : <span className="w-24 text-end text-sm tabular text-muted">{shares[i]}</span>}
-              {people.length > 2 && i > 0 && <button onClick={() => setPeople(people.filter((_, j) => j !== i))} className="p-2 text-muted hover:text-red-500" aria-label="remove"><Trash2 size={16} /></button>}
+              {people.length > 2 && i > 0 && <button onClick={() => { setPeople(people.filter((_, j) => j !== i)); setShareText((s) => s.filter((_, j) => j !== i)); }} className="p-2 text-muted hover:text-red-500" aria-label="remove"><Trash2 size={16} /></button>}
             </div>
           ))}
           <Button variant="soft" size="sm" onClick={() => setPeople([...people, { name: '', share: 0, paid: false }])}><Plus size={14} />{t('split.addPerson')}</Button>

@@ -10,10 +10,11 @@ import { db } from '@/db/db';
 import { create, remove } from '@/db/repo';
 import { Icon } from '@/lib/icons';
 import { isoDateTime } from '@/lib/period';
-import { toBase } from '@/lib/stats';
+import { toBase, toCur } from '@/lib/stats';
+import { defaultDecimals } from '@/lib/currency';
 import { exportCSV } from '@/lib/export';
 import { scheduleSync } from '@/lib/sync';
-import { cx } from '@/lib/utils';
+import { cx, round } from '@/lib/utils';
 import { useQuickAdd } from '../AppShell';
 
 /**
@@ -23,7 +24,8 @@ import { useQuickAdd } from '../AppShell';
  */
 type SortKey = 'date' | 'category' | 'account' | 'amount';
 
-export function TxTable({ txs }: { txs: Transaction[] }) {
+/** `txs` is the full filtered list; it is sorted first, then the first `limit` rows are shown. */
+export function TxTable({ txs, limit = Infinity }: { txs: Transaction[]; limit?: number }) {
   const { t } = useTranslation();
   const toast = useToast();
   const openAdd = useQuickAdd();
@@ -38,7 +40,7 @@ export function TxTable({ txs }: { txs: Transaction[] }) {
   const catName = (id?: string) => categories.find((c) => c.id === id)?.name ?? '';
   const accName = (id?: string) => accounts.find((a) => a.id === id)?.name ?? '';
 
-  const rows = useMemo(() => {
+  const sorted = useMemo(() => {
     const val = (x: Transaction): string | number => {
       switch (sort.key) {
         case 'date': return x.date;
@@ -49,6 +51,7 @@ export function TxTable({ txs }: { txs: Transaction[] }) {
     };
     return [...txs].sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * sort.dir);
   }, [txs, sort, ctx]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rows = useMemo(() => sorted.slice(0, limit), [sorted, limit]);
 
   // Drop selections that no longer exist (deleted / filtered out).
   useEffect(() => {
@@ -100,23 +103,24 @@ export function TxTable({ txs }: { txs: Transaction[] }) {
   };
 
   const applyBulk = async (field: 'categoryId' | 'accountId', value: string) => {
-    const before = selected.map((x) => ({ id: x.id, v: x[field] }));
+    const target = accounts.find((a) => a.id === value);
+    const changes = selected.flatMap((x): { id: string; patch: Partial<Transaction> }[] => {
+      if (field === 'categoryId') return x.type === 'transfer' ? [] : [{ id: x.id, patch: { categoryId: value } }];
+      if (!target || x.accountId === value || (x.type === 'transfer' && x.toAccountId === value)) return [];
+      // accountAmount is in the account's currency, so it must follow the new account.
+      const accountAmount = x.type !== 'transfer' && target.currency !== x.currency
+        ? round(toCur(x.amount, x.currency, target.currency, ctx), defaultDecimals(target.currency)) : undefined;
+      return [{ id: x.id, patch: { accountId: value, accountAmount } }];
+    });
+    const before = changes.map((c) => ({ id: c.id, rec: selected.find((x) => x.id === c.id)! }));
     await db.transaction('rw', db.transactions, async () => {
-      for (const x of selected) if (!(field === 'categoryId' && x.type === 'transfer')) await db.transactions.update(x.id, { [field]: value, updatedAt: Date.now() } as Partial<Transaction>);
+      for (const c of changes) await db.transactions.update(c.id, { ...c.patch, updatedAt: Date.now() });
     });
     scheduleSync();
     setBulk(null);
-    toast(t('table.updated', { count: selected.length }), async () => {
+    toast(t('table.updated', { count: changes.length }), async () => {
       await db.transaction('rw', db.transactions, async () => {
-        for (const b of before) {
-          const rec = await db.transactions.get(b.id);
-          if (rec) {
-            if (b.v === undefined) delete (rec as unknown as Record<string, unknown>)[field];
-            else (rec as unknown as Record<string, unknown>)[field] = b.v;
-            rec.updatedAt = Date.now();
-            await db.transactions.put(rec);
-          }
-        }
+        for (const b of before) if (await db.transactions.get(b.id)) await db.transactions.put({ ...b.rec, updatedAt: Date.now() });
       });
       scheduleSync();
     });

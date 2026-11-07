@@ -67,3 +67,45 @@ export async function patchSettings(patch: Partial<Settings>) {
   await db.settings.put({ ...cur, ...patch, updatedAt: Date.now() });
   scheduleSync();
 }
+
+/**
+ * Re-points everything that references deleted categories: transactions, recurring rules,
+ * templates and bills get `remap(oldId)` (undefined = uncategorised); budgets drop the id.
+ * Returns how many transactions were affected and an undo that restores the old records.
+ */
+export async function remapCategories(ids: string[], remap: (id: string) => string | undefined) {
+  const gone = new Set(ids);
+  const tables = ['transactions', 'recurring', 'templates', 'bills', 'budgets'] as const;
+  const prev: { table: SyncTable; rec: Base }[] = [];
+  let txCount = 0;
+  await db.transaction('rw', tables.map((t) => db.table(t)), async () => {
+    for (const table of tables) {
+      for (const rec of (await db.table(table).toArray()) as (Base & { categoryId?: string; categoryIds?: string[] })[]) {
+        let next: typeof rec | undefined;
+        if (table === 'budgets') {
+          if (rec.categoryIds?.some((c) => gone.has(c))) {
+            const mapped = [...new Set(rec.categoryIds.map((c) => (gone.has(c) ? remap(c) : c)).filter((c): c is string => !!c))];
+            next = { ...rec, categoryIds: mapped };
+          }
+        } else if (rec.categoryId && gone.has(rec.categoryId)) {
+          next = { ...rec, categoryId: remap(rec.categoryId) };
+          if (next.categoryId === undefined) delete next.categoryId;
+        }
+        if (!next) continue;
+        prev.push({ table, rec });
+        if (table === 'transactions') txCount++;
+        await db.table(table).put({ ...next, updatedAt: Date.now() });
+      }
+    }
+  });
+  if (prev.length) scheduleSync();
+  return {
+    txCount,
+    undo: async () => {
+      await db.transaction('rw', tables.map((t) => db.table(t)), async () => {
+        for (const p of prev) await db.table(p.table).put({ ...p.rec, updatedAt: Date.now() });
+      });
+      if (prev.length) scheduleSync();
+    },
+  };
+}

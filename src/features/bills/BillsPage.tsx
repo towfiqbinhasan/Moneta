@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { Bell, Plus } from 'lucide-react';
@@ -10,7 +10,7 @@ import { useToast } from '@/components/Toast';
 import { Icon } from '@/lib/icons';
 import { parseAmount } from '@/lib/format';
 import { isoDateTime, isoDay } from '@/lib/period';
-import { nextOccurrence } from '@/lib/recurring';
+import { accountAmountFor, anchorOf, nextOccurrence } from '@/lib/recurring';
 import { create, remove, save, update } from '@/db/repo';
 import type { Bill, Repeat, Transaction } from '@/db/types';
 
@@ -19,19 +19,26 @@ export function BillsPage() {
   const toast = useToast();
   const { bills, categories, accounts, money, date } = useData();
   const [edit, setEdit] = useState<Partial<Bill> | null>(null);
+  const paying = useRef(false);
 
   /** Mark paid: records the expense and moves the due date forward. */
   const pay = async (b: Bill) => {
     const accountId = accounts.find((a) => a.id === b.accountId && !a.archived)?.id ?? accounts.find((a) => !a.archived)?.id ?? accounts[0]?.id;
     if (!accountId) return;
-    const tx = await create<Transaction>('transactions', { type: 'expense', amount: b.amount, currency: b.currency, accountId, categoryId: b.categoryId, date: isoDateTime(new Date()), note: b.name, tags: ['bill'] });
+    if (paying.current) return;
+    paying.current = true;
+    try {
+    const accountAmount = await accountAmountFor(b.amount, b.currency, accountId);
+    const tx = await create<Transaction>('transactions', { type: 'expense', amount: b.amount, currency: b.currency, accountId, accountAmount, categoryId: b.categoryId, date: isoDateTime(new Date()), note: b.name, tags: ['bill'] });
     let undoAction: () => Promise<void>;
     if (b.repeat === 'none') {
       undoAction = await remove('bills', b.id);
     } else {
-      undoAction = await update<Bill>('bills', b.id, { lastPaid: isoDay(new Date()), dueDate: nextOccurrence(b.dueDate, b.repeat) });
+      const anchorDay = anchorOf(b.dueDate, b.anchorDay);
+      undoAction = await update<Bill>('bills', b.id, { lastPaid: isoDay(new Date()), dueDate: nextOccurrence(b.dueDate, b.repeat, 1, anchorDay), anchorDay });
     }
     toast(t('bill.paid', { name: b.name }), async () => { await undoAction(); await remove('transactions', tx.id); });
+    } finally { paying.current = false; }
   };
 
   return (
@@ -72,7 +79,7 @@ function BillForm({ initial, onClose }: { initial: Partial<Bill>; onClose: () =>
   const [amount, setAmount] = useState(initial.amount ? String(initial.amount) : '');
   const set = <K extends keyof Bill>(k: K, v: Bill[K]) => setB((p) => ({ ...p, [k]: v }));
   const valid = !!b.name?.trim() && parseAmount(amount) > 0 && !!b.dueDate;
-  const submit = async () => { if (!valid) return; await save<Bill>('bills', { ...(b as Bill), name: b.name!.trim(), amount: parseAmount(amount) }); onClose(); };
+  const submit = async () => { if (!valid) return; await save<Bill>('bills', { ...(b as Bill), name: b.name!.trim(), amount: parseAmount(amount), anchorDay: b.dueDate === initial.dueDate ? b.anchorDay : undefined }); onClose(); };
   const del = async () => { const u = await remove('bills', initial.id!); toast(t('common.deleted'), u); onClose(); };
   return (
     <Sheet open onClose={onClose} title={initial.id ? t('bill.edit') : t('bill.add')} tall

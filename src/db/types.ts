@@ -8,6 +8,8 @@ export interface Base {
   id: string;
   createdAt: number;
   updatedAt: number;
+  /** true = created by "Load demo data" (removable); false = was demo, now kept as the user's own */
+  demo?: boolean;
 }
 
 export type TxType = 'expense' | 'income' | 'transfer';
@@ -55,6 +57,10 @@ export interface Account extends Base {
   order: number;
   archived: boolean;
   includeInTotal: boolean;
+  /** Opening balance before demo data changed it (restored by "Remove demo data") */
+  demoOpening?: number;
+  /** The opening balance demo data set; if the user changed it since, theirs is kept */
+  demoBalance?: number;
 }
 
 export type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -116,6 +122,8 @@ export interface Bill extends Base {
   categoryId?: string;
   accountId?: string;
   dueDate: string; // yyyy-MM-dd
+  /** Day of month the schedule is anchored to (keeps the 31st after a short month) */
+  anchorDay?: number;
   repeat: Repeat;
   remindDaysBefore: number;
   lastPaid?: string;
@@ -137,6 +145,8 @@ export interface Recurring extends Base, TxTemplateFields {
   frequency: Period;
   interval: number;
   nextDate: string; // yyyy-MM-dd
+  /** Day of month the schedule is anchored to (keeps the 31st after a short month) */
+  anchorDay?: number;
   endDate?: string;
   active: boolean;
 }

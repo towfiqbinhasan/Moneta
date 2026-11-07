@@ -65,7 +65,7 @@ function RecurringForm({ rule, onClose }: { rule: Recurring; onClose: () => void
   const valid = parseAmount(amount) > 0 && !!next;
   const submit = async () => {
     if (!valid) return;
-    await update<Recurring>('recurring', rule.id, { amount: parseAmount(amount), frequency: freq, interval: Math.max(1, interval || 1), nextDate: next, endDate: end || undefined, note, active: true });
+    await update<Recurring>('recurring', rule.id, { amount: parseAmount(amount), frequency: freq, interval: Math.max(1, interval || 1), nextDate: next, anchorDay: next === rule.nextDate ? rule.anchorDay : undefined, endDate: end || undefined, note, active: true });
     onClose();
   };
   return (

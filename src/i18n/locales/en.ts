@@ -203,6 +203,8 @@ const en: Record<string, string> = {
   // Data
   'data.backup': 'Backup (JSON)', 'data.restore': 'Restore', 'data.exportAll': 'Export all (CSV)', 'data.loadDemo': 'Load demo data',
   'data.demoLoaded': 'Demo data added', 'data.restoreConfirm': 'Restoring replaces ALL current data with the backup. Continue?',
+  'data.removeDemo': 'Remove demo data', 'data.noDemo': 'No demo data found',
+  'data.removeDemoConfirm': 'Delete {{count}} demo records? Your own entries are kept.', 'data.demoRemoved': 'Removed {{count}} demo records',
   'data.restored': 'Backup restored', 'data.reset': 'Delete all data',
   'data.resetConfirm': 'This permanently deletes everything on this device. Make a backup first! Continue?',
   'data.resetType': 'Type DELETE to confirm',

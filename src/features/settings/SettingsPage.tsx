@@ -21,7 +21,7 @@ import { fetchRates, perBase, rebaseManualRates, setManualRate } from '@/lib/rat
 import { biometricAvailable, hashPin, registerBiometric } from '@/lib/lock';
 import { requestPermission } from '@/lib/notify';
 import { backupJSON, exportCSV, restoreJSON, wipeAll } from '@/lib/export';
-import { seedDemo } from '@/db/demo';
+import { countDemo, removeDemo, seedDemo } from '@/db/demo';
 import { syncEnabled, syncNowManual, useSync } from '@/lib/sync';
 import { AccountCard } from '@/components/Account';
 import { BrandBanner, MadeBy } from '@/components/Brand';
@@ -392,7 +392,7 @@ function RemindersSection() {
         patchSettings({ dailyReminder: { ...s.dailyReminder, enabled: v } });
       }} label={t('reminder.daily')} desc={t('reminder.desc')} />
       {s.dailyReminder.enabled && (
-        <Field label={t('reminder.time')}><Input type="time" value={s.dailyReminder.time} onChange={(e) => patchSettings({ dailyReminder: { ...s.dailyReminder, time: e.target.value } })} /></Field>
+        <Field label={t('reminder.time')}><Input type="time" value={s.dailyReminder.time} onChange={(e) => e.target.value && patchSettings({ dailyReminder: { ...s.dailyReminder, time: e.target.value } })} /></Field>
       )}
       <p className="text-xs text-muted">{t('reminder.limit')}</p>
     </Section>
@@ -415,12 +415,19 @@ function DataSection() {
         <Button variant="soft" onClick={() => exportCSV(transactions, { settings, accounts, categories, t })}>{t('data.exportAll')}</Button>
         <Button variant="soft" onClick={startImport}>{t('import.title')}</Button>
         <Button variant="soft" onClick={async () => { await seedDemo(settings.baseCurrency, t); toast(t('data.demoLoaded')); }}>{t('data.loadDemo')}</Button>
+        <Button variant="soft" onClick={async () => {
+          const n = await countDemo();
+          if (!n) { toast(t('data.noDemo')); return; }
+          if (!confirm(t('data.removeDemoConfirm', { count: n }))) return;
+          const removed = await removeDemo();
+          toast(t('data.demoRemoved', { count: removed }));
+        }}>{t('data.removeDemo')}</Button>
       </div>
       <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={async (e) => {
         const f = e.target.files?.[0];
+        e.target.value = ''; // so picking the same file again (after cancelling) still fires onChange
         if (!f || !confirm(t('data.restoreConfirm'))) return;
         try { await restoreJSON(f); toast(t('data.restored')); } catch (err) { toast(String((err as Error).message), undefined, 'warn'); }
-        e.target.value = '';
       }} />
       <Button variant="danger" block onClick={() => { if (confirm(t('data.resetConfirm')) && prompt(t('data.resetType')) === 'DELETE') wipeAll(); }}>{t('data.reset')}</Button>
     </Section>

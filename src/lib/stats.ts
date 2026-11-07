@@ -1,8 +1,9 @@
-import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
-import type { Account, Budget, Category, Goal, GoalEntry, Settings, Transaction } from '@/db/types';
+import { addDays, differenceInCalendarDays, parseISO, startOfDay } from 'date-fns';
+import type { Account, Budget, Category, Debt, Goal, GoalEntry, Settings, Transaction } from '@/db/types';
+import { defaultDecimals } from './currency';
 import { convert, type RateMap } from './rates';
 import { inRange, rangeFor, shiftRange, daysLeft, type Range, isoDay } from './period';
-import { clamp, sum } from './utils';
+import { clamp, round, sum } from './utils';
 
 /** All computations are pure: given data + settings + rates → numbers. */
 
@@ -151,17 +152,26 @@ export function goalStatus(g: Goal, entries: GoalEntry[], today = new Date()) {
   let perDayNeeded: number | undefined;
   let daysToDeadline: number | undefined;
   if (g.deadline) {
-    daysToDeadline = differenceInCalendarDays(new Date(g.deadline), today);
+    daysToDeadline = differenceInCalendarDays(parseISO(g.deadline), today) // local date, not UTC;
     perDayNeeded = daysToDeadline > 0 ? remaining / daysToDeadline : remaining;
   }
   // Estimated completion from average pace since first deposit.
   let eta: Date | undefined;
   if (mine.length && remaining > 0 && saved > 0) {
-    const days = Math.max(1, differenceInCalendarDays(today, new Date(mine[0].date)) + 1);
+    const days = Math.max(1, differenceInCalendarDays(today, parseISO(mine[0].date)) + 1);
     const pace = saved / days;
     if (pace > 0) eta = addDays(today, Math.ceil(remaining / pace));
   }
   return { saved, remaining, pct, perDayNeeded, daysToDeadline, eta, entries: mine };
+}
+
+/* ------------------------------ Debts ------------------------------ */
+
+/** Paid and remaining on a debt, rounded to the currency so 6.6 + 10.2 + 3.2 settles 20 exactly. */
+export function debtLeft(d: Debt) {
+  const dec = defaultDecimals(d.currency);
+  const paid = round(sum(d.payments.map((p) => p.amount)), dec);
+  return { paid, left: Math.max(0, round(d.amount - paid, dec)) };
 }
 
 /* ------------------------------ Insights ------------------------------ */
@@ -180,7 +190,10 @@ export function insights(txs: Transaction[], c: Ctx, ref = new Date()): Insight[
   const cur = rangeFor('monthly', ref, c.settings);
   const elapsed = differenceInCalendarDays(ref, cur.start);
   const prevStart = rangeFor('monthly', shiftRange('monthly', ref, -1), c.settings).start;
-  const prev: Range = { start: prevStart, end: addDays(prevStart, elapsed + 1) };
+  const prevEnd = rangeFor('monthly', shiftRange('monthly', ref, -1), c.settings).end;
+  // Same number of days, but never past the end of the previous month (e.g. on Mar 31 vs. February).
+  const sameDay = addDays(prevStart, elapsed + 1);
+  const prev: Range = { start: prevStart, end: sameDay < prevEnd ? sameDay : prevEnd };
   const curTx = txIn(txs, { start: cur.start, end: ref });
   const prevTx = txIn(txs, prev);
   const out: Insight[] = [];

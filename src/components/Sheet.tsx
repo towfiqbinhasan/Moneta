@@ -8,6 +8,9 @@ import { cx } from '@/lib/utils';
  * - Drag the handle/header down to dismiss (distance or flick velocity).
  * - Backdrop tap, Esc and the close button animate out before unmounting.
  */
+/** Open sheets, oldest first. */
+const openSheets: object[] = [];
+
 export function Sheet({ open, onClose, title, children, footer, tall }: {
   open: boolean;
   onClose: () => void;
@@ -20,19 +23,27 @@ export function Sheet({ open, onClose, title, children, footer, tall }: {
   const [dy, setDy] = useState(0);
   const drag = useRef<{ y: number; t: number } | null>(null);
 
+  const closingRef = useRef(false);
   const close = useCallback(() => {
+    if (closingRef.current) return; // a second back press during the animation must not close twice
+    closingRef.current = true;
     setClosing(true);
-    setTimeout(() => { setClosing(false); setDy(0); onClose(); }, 220);
+    setTimeout(() => { closingRef.current = false; setClosing(false); setDy(0); onClose(); }, 220);
   }, [onClose]);
 
+  const token = useRef({});
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    // Only the top-most sheet reacts to Escape / Android back, so a picker closes without its parent.
+    const me = token.current;
+    openSheets.push(me);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && openSheets[openSheets.length - 1] === me && close();
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
+      openSheets.splice(openSheets.indexOf(me), 1);
       document.body.style.overflow = prev;
     };
   }, [open, close]);
