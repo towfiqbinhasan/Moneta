@@ -22,6 +22,7 @@ import { biometricAvailable, hashPin, registerBiometric } from '@/lib/lock';
 import { requestPermission } from '@/lib/notify';
 import { backupJSON, exportCSV, restoreJSON, wipeAll } from '@/lib/export';
 import { countDemo, removeDemo, seedDemo } from '@/db/demo';
+import { AppUpdateButton } from '@/components/AppUpdate';
 import { syncEnabled, syncNowManual, useSync } from '@/lib/sync';
 import { AccountCard } from '@/components/Account';
 import { BrandBanner, MadeBy } from '@/components/Brand';
@@ -476,6 +477,7 @@ function AboutSection() {
     <section className="mt-8 flex flex-col items-center text-center">
       <BrandBanner className="w-64 sm:w-80" />
       <p className="mt-2 text-xs text-muted">v1.3 · {t('settings.offlineNote')}</p>
+      <AppUpdateButton />
       <MadeBy coBrand className="m-tile mt-5 rounded-2xl px-4 py-3" />
     </section>
   );

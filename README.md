@@ -134,9 +134,9 @@ The app is fully usable without an account. To enable login and sync across devi
    VITE_SUPABASE_URL=https://xxxx.supabase.co
    VITE_SUPABASE_ANON_KEY=eyJ...
    ```
-5. Under **Authentication → URL Configuration**, set the **Site URL** to your live URL (e.g. `https://moneta.vercel.app`). Under **Redirect URLs**, add:
+5. Under **Authentication → URL Configuration**, set the **Site URL** to your live URL (e.g. `https://moneta-th.vercel.app`). Under **Redirect URLs**, add:
    - `http://localhost:5173/**` (local development)
-   - `https://moneta.vercel.app/**` (your Vercel domain)
+   - `https://moneta-th.vercel.app/**` (your Vercel domain)
    - `app.moneta.tracker://auth-callback` (the phone app's Google sign-in)
 6. (Optional) For Google sign-in, enable it under **Authentication → Providers → Google** and paste the OAuth client ID and secret.
 7. Restart `npm run dev`. The sign-in option now appears in the avatar menu, the setup wizard and **Settings → Cloud sync**.

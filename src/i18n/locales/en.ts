@@ -203,6 +203,7 @@ const en: Record<string, string> = {
   // Data
   'data.backup': 'Backup (JSON)', 'data.restore': 'Restore', 'data.exportAll': 'Export all (CSV)', 'data.loadDemo': 'Load demo data',
   'data.demoLoaded': 'Demo data added', 'data.restoreConfirm': 'Restoring replaces ALL current data with the backup. Continue?',
+  'update.available': 'New version available (build {{build}})', 'update.install': 'Update', 'update.getApp': 'Get Moneta for Android', 'update.download': 'Download', 'update.later': 'Later', 'update.downloadAndroid': 'Download Android app (APK)', 'update.check': 'Check for updates', 'update.upToDate': 'You have the latest version', 'update.build': 'Build {{build}}',
   'data.removeDemo': 'Remove demo data', 'data.noDemo': 'No demo data found',
   'data.removeDemoConfirm': 'Delete {{count}} demo records? Your own entries are kept.', 'data.demoRemoved': 'Removed {{count}} demo records',
   'data.restored': 'Backup restored', 'data.reset': 'Delete all data',

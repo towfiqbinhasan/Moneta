@@ -203,6 +203,7 @@ const de: Record<string, string> = {
   // Data
   'data.backup': 'Sicherung (JSON)', 'data.restore': 'Wiederherstellen', 'data.exportAll': 'Alles exportieren (CSV)', 'data.loadDemo': 'Demodaten laden',
   'data.demoLoaded': 'Demodaten hinzugefügt', 'data.restoreConfirm': 'Beim Wiederherstellen werden ALLE aktuellen Daten durch die Sicherung ersetzt. Fortfahren?',
+  'update.available': 'Neue Version verfügbar (Build {{build}})', 'update.install': 'Aktualisieren', 'update.getApp': 'Moneta für Android holen', 'update.download': 'Herunterladen', 'update.later': 'Später', 'update.downloadAndroid': 'Android-App herunterladen (APK)', 'update.check': 'Nach Updates suchen', 'update.upToDate': 'Du hast die neueste Version', 'update.build': 'Build {{build}}',
   'data.removeDemo': 'Demodaten entfernen', 'data.noDemo': 'Keine Demodaten gefunden',
   'data.removeDemoConfirm': '{{count}} Demo-Einträge löschen? Deine eigenen Einträge bleiben erhalten.', 'data.demoRemoved': '{{count}} Demo-Einträge entfernt',
   'data.restored': 'Sicherung wiederhergestellt', 'data.reset': 'Alle Daten löschen',

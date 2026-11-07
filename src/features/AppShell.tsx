@@ -11,6 +11,7 @@ import { useData } from '@/hooks/useData';
 import { compressImage, cx } from '@/lib/utils';
 import { Aurora, haptic } from '@/components/motion';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AppUpdateBanner } from '@/components/AppUpdate';
 import { BrandMark, Wordmark } from '@/components/Brand';
 import { AccountMenu, ConflictDialog, SyncBadge } from '@/components/Account';
 import { useToast } from '@/components/Toast';
@@ -196,6 +197,7 @@ export function AppShell() {
             </header>
 
             <main className="mx-auto min-w-0 max-w-[1400px] overflow-x-clip px-4 pb-32 md:px-8 md:pb-12 md:pt-2">
+              <AppUpdateBanner />
               {trip && (
                 <div className="-mx-4 flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-semibold text-white md:mx-0 md:mt-3 md:rounded-full" style={{ background: 'var(--brand-grad)' }}>
                   <Plane size={14} className="animate-float" /> {t('trip.activeBanner', { name: trip.name, currency: trip.currency })}

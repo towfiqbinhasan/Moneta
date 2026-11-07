@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Check, ChevronLeft, LogIn, Search } from 'lucide-react';
+import { Check, ChevronLeft, Download, LogIn, Search, Smartphone } from 'lucide-react';
+import { isNative } from '@/lib/native';
+import { downloadApk } from '@/lib/appUpdate';
 import { BrandBanner, BrandMark } from '@/components/Brand';
 import { AuthScreen } from '../auth/AuthScreen';
 import { scheduleSync, syncEnabled } from '@/lib/sync';
@@ -100,6 +102,13 @@ export function SetupWizard({ settings }: { settings: Settings }) {
             <button onClick={() => setAuth(true)} className="m-card mt-5 flex w-full items-center gap-3 p-4 text-start transition active:scale-[.98]">
               <span className="grid h-10 w-10 place-items-center rounded-xl text-white" style={{ background: 'var(--brand-grad)' }}><LogIn size={18} /></span>
               <span className="flex-1"><b className="block text-sm">{t('auth.haveAccount')}</b><span className="text-xs text-muted">{t('auth.haveAccountText')}</span></span>
+            </button>
+          )}
+          {!isNative && (
+            <button onClick={() => downloadApk()} className="m-card mt-3 flex w-full items-center gap-3 p-4 text-start transition active:scale-[.98]">
+              <span className="grid h-10 w-10 place-items-center rounded-xl text-white" style={{ background: 'var(--brand-grad)' }}><Smartphone size={18} /></span>
+              <span className="flex-1"><b className="block text-sm">{t('update.getApp')}</b><span className="text-xs text-muted">{t('update.downloadAndroid')}</span></span>
+              <Download size={18} className="text-muted" />
             </button>
           )}
         </>
