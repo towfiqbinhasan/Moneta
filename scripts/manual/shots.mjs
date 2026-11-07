@@ -34,13 +34,13 @@ const browser = await (async () => {
 const page = await browser.newPage();
 // Desktop Chrome UA (no "Android"), so the web "Get the Android app" banner stays hidden.
 await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36');
-const phone = { width: 390, height: 844, deviceScaleFactor: 600 / 390, isMobile: true, hasTouch: true };
+const phone = { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
 await page.setViewport(phone);
 await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
 
 const shot = async (name, opts = {}) => {
   await sleep(opts.wait ?? 700);
-  await page.screenshot({ path: `${OUT}${name}.jpg`, type: 'jpeg', quality: 74, ...opts.shot });
+  await page.screenshot({ path: `${OUT}${name}.jpg`, type: 'jpeg', quality: 78, ...opts.shot });
   console.log('✓', name);
 };
 /** Click the first visible button/link whose text contains `text`. */
