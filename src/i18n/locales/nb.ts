@@ -203,6 +203,7 @@ const nb: Record<string, string> = {
   // Data
   'data.backup': 'Sikkerhetskopi (JSON)', 'data.restore': 'Gjenopprett', 'data.exportAll': 'Eksporter alt (CSV)', 'data.loadDemo': 'Last inn demodata',
   'data.demoLoaded': 'Demodata lagt til', 'data.restoreConfirm': 'Gjenoppretting erstatter ALLE nåværende data med sikkerhetskopien. Vil du fortsette?',
+  'manual.title': 'Brukerveiledning', 'manual.pdf': 'Brukerveiledning (PDF)',
   'update.available': 'Ny versjon tilgjengelig (bygg {{build}})', 'update.install': 'Oppdater', 'update.getApp': 'Hent Moneta for Android', 'update.download': 'Last ned', 'update.later': 'Senere', 'update.downloadAndroid': 'Last ned Android-appen (APK)', 'update.check': 'Se etter oppdateringer', 'update.upToDate': 'Du har nyeste versjon', 'update.build': 'Bygg {{build}}',
   'data.removeDemo': 'Fjern demodata', 'data.noDemo': 'Fant ingen demodata',
   'data.removeDemoConfirm': 'Slette {{count}} demooppføringer? Dine egne oppføringer beholdes.', 'data.demoRemoved': 'Fjernet {{count}} demooppføringer',

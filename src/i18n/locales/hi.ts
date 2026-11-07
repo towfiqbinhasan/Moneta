@@ -203,6 +203,7 @@ const hi: Record<string, string> = {
   // Data
   'data.backup': 'बैकअप (JSON)', 'data.restore': 'रीस्टोर करें', 'data.exportAll': 'सब एक्सपोर्ट करें (CSV)', 'data.loadDemo': 'डेमो डेटा लोड करें',
   'data.demoLoaded': 'डेमो डेटा जोड़ दिया गया', 'data.restoreConfirm': 'रीस्टोर करने से मौजूदा सारा डेटा बैकअप से बदल जाएगा। आगे बढ़ें?',
+  'manual.title': 'उपयोगकर्ता गाइड', 'manual.pdf': 'उपयोगकर्ता गाइड (PDF)',
   'update.available': 'नया वर्ज़न उपलब्ध है (बिल्ड {{build}})', 'update.install': 'अपडेट करें', 'update.getApp': 'Moneta Android ऐप पाएँ', 'update.download': 'डाउनलोड', 'update.later': 'बाद में', 'update.downloadAndroid': 'Android ऐप डाउनलोड करें (APK)', 'update.check': 'अपडेट जाँचें', 'update.upToDate': 'आपके पास नवीनतम वर्ज़न है', 'update.build': 'बिल्ड {{build}}',
   'data.removeDemo': 'डेमो डेटा हटाएं', 'data.noDemo': 'कोई डेमो डेटा नहीं मिला',
   'data.removeDemoConfirm': '{{count}} डेमो रिकॉर्ड हटाएं? आपकी अपनी एंट्री बनी रहेंगी।', 'data.demoRemoved': '{{count}} डेमो रिकॉर्ड हटाए गए',

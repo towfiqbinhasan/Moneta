@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowDown, ArrowUp, ChevronRight, Cloud, Database, Eye, EyeOff, Globe, Lock, Palette, RefreshCw, Bell, Coins, LayoutDashboard,
-  Moon, Sun, MonitorSmartphone, UserRound,
+  Moon, Sun, MonitorSmartphone, UserRound, BookOpen, FileDown,
 } from 'lucide-react';
 import { STYLES, isDark, themeId } from '@/theme/theme';
 import { useData } from '@/hooks/useData';
@@ -23,6 +23,7 @@ import { requestPermission } from '@/lib/notify';
 import { backupJSON, exportCSV, restoreJSON, wipeAll } from '@/lib/export';
 import { countDemo, removeDemo, seedDemo } from '@/db/demo';
 import { AppUpdateButton } from '@/components/AppUpdate';
+import { getManualPdf, openManual } from '@/lib/manual';
 import { syncEnabled, syncNowManual, useSync } from '@/lib/sync';
 import { AccountCard } from '@/components/Account';
 import { BrandBanner, MadeBy } from '@/components/Brand';
@@ -477,6 +478,10 @@ function AboutSection() {
     <section className="mt-8 flex flex-col items-center text-center">
       <BrandBanner className="w-64 sm:w-80" />
       <p className="mt-2 text-xs text-muted">v1.3 · {t('settings.offlineNote')}</p>
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        <Button variant="soft" onClick={openManual}><BookOpen size={16} /> {t('manual.title')}</Button>
+        <Button variant="soft" onClick={() => getManualPdf()}><FileDown size={16} /> {t('manual.pdf')}</Button>
+      </div>
       <AppUpdateButton />
       <MadeBy coBrand className="m-tile mt-5 rounded-2xl px-4 py-3" />
     </section>

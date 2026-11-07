@@ -42,7 +42,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webp,jpg,woff2}'],
         // Large source artwork is for README/social only — don't precache it.
-        globIgnores: ['**/*-original.png', '**/brand/moneta-banner.png', '**/og-image.jpg'],
+        globIgnores: ['**/*-original.png', '**/brand/moneta-banner.png', '**/og-image.jpg', '**/manual/**'],
+        // The user manual is a separate static page, not part of the single-page app.
+        navigateFallbackDenylist: [/^\/manual\//],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
           {

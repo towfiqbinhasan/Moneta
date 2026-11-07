@@ -203,6 +203,7 @@ const bn: Record<string, string> = {
   // Data
   'data.backup': 'ব্যাকআপ (JSON)', 'data.restore': 'রিস্টোর', 'data.exportAll': 'সব এক্সপোর্ট (CSV)', 'data.loadDemo': 'ডেমো ডেটা যোগ করুন',
   'data.demoLoaded': 'ডেমো ডেটা যোগ হয়েছে', 'data.restoreConfirm': 'রিস্টোর করলে বর্তমান সব ডেটা ব্যাকআপ দিয়ে বদলে যাবে। এগিয়ে যাবেন?',
+  'manual.title': 'ব্যবহার নির্দেশিকা', 'manual.pdf': 'ব্যবহার নির্দেশিকা (PDF)',
   'update.available': 'নতুন ভার্সন এসেছে (বিল্ড {{build}})', 'update.install': 'আপডেট', 'update.getApp': 'Moneta অ্যান্ড্রয়েড অ্যাপ নিন', 'update.download': 'ডাউনলোড', 'update.later': 'পরে', 'update.downloadAndroid': 'অ্যান্ড্রয়েড অ্যাপ ডাউনলোড (APK)', 'update.check': 'আপডেট চেক করুন', 'update.upToDate': 'আপনার কাছে সর্বশেষ ভার্সন আছে', 'update.build': 'বিল্ড {{build}}',
   'data.removeDemo': 'ডেমো ডেটা মুছুন', 'data.noDemo': 'কোনো ডেমো ডেটা পাওয়া যায়নি',
   'data.removeDemoConfirm': '{{count}}টি ডেমো রেকর্ড মুছবেন? আপনার নিজের এন্ট্রি থাকবে।', 'data.demoRemoved': '{{count}}টি ডেমো রেকর্ড মুছে ফেলা হয়েছে',

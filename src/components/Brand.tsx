@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cx } from '@/lib/utils';
+import { isNative, openBrowser } from '@/lib/native';
 
 /**
  * Moneta brand kit.
@@ -21,7 +22,7 @@ export const BRAND = { cyan: '#00b8ff', blue: '#2563ff', violet: '#8b2cf5', navy
 export const TAGLINE = 'Freelance • Work • Earn • Globally';
 
 /** Who made Moneta — shown on the splash, sign-in, About and More screens. */
-export const MAKER = { name: 'MD. Towfiq Bin Hasan', team: 'TH Team' };
+export const MAKER = { name: 'MD. Towfiq Bin Hasan', team: 'TH Team', url: 'https://towfiqbinhasan.com' };
 
 const markSrc = (px: number) => (px <= 64 ? '/brand/moneta-mark-128.webp' : px <= 140 ? '/brand/moneta-mark-256.webp' : '/brand/moneta-mark-512.webp');
 
@@ -226,7 +227,18 @@ export function CoBrand({ size = 44, dark, animated, className }: { size?: numbe
 export function MadeBy({ dark, animated, delay = 0, coBrand, className }: { dark?: boolean; animated?: boolean; delay?: number; coBrand?: boolean; className?: string }) {
   const { t } = useTranslation();
   return (
-    <div className={cx('flex items-center gap-3', animated && 'credit-in', className)} style={animated ? { animationDelay: `${delay}s` } : undefined}>
+    <a
+      href={MAKER.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={MAKER.url.replace('https://', '')}
+      onClick={(e) => {
+        // In the Android app, open the system browser instead of navigating the app's WebView.
+        if (isNative) { e.preventDefault(); openBrowser(MAKER.url); }
+      }}
+      className={cx('flex items-center gap-3 rounded-2xl transition hover:opacity-85 active:scale-[.98]', animated && 'credit-in', className)}
+      style={animated ? { animationDelay: `${delay}s` } : undefined}
+    >
       {coBrand ? <CoBrand size={34} dark={dark} /> : <TeamLogo size={34} glow={dark} animated={animated} delay={delay + 0.15} />}
       <div className="text-start leading-tight">
         <div className={cx('text-[10px] font-semibold uppercase tracking-[0.14em]', dark ? 'text-white/55' : 'text-muted')}>
@@ -235,6 +247,6 @@ export function MadeBy({ dark, animated, delay = 0, coBrand, className }: { dark
         <div className={cx('text-[13px] font-bold', dark ? 'text-white' : 'text-ink')}>{MAKER.name}</div>
         <div className="text-brand-grad text-[11px] font-extrabold tracking-wide">{MAKER.team}</div>
       </div>
-    </div>
+    </a>
   );
 }

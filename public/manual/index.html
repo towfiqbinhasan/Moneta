@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Moneta User Manual</title>
+<meta name="description" content="A simple, picture-by-picture guide to Moneta, the expense and budget tracker." />
+<link rel="icon" href="../favicon-64.png" />
+<style>
+  :root {
+    --ink: #141a33; --muted: #5b6280; --line: #e3e6f0; --paper: #ffffff; --soft: #f4f6fc;
+    --brand: #2563ff; --brand2: #8b2cf5; --cyan: #00b8ff; --navy: #0b1240;
+    --good: #128a5c; --warn: #b26b00;
+    --grad: linear-gradient(120deg, var(--cyan), var(--brand) 45%, var(--brand2));
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--soft); color: var(--ink); font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif; }
+  a { color: var(--brand); }
+  img { max-width: 100%; }
+  .page { max-width: 880px; margin: 0 auto; padding: 0 16px 48px; }
+
+  /* top bar (screen only) */
+  .bar { position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .bar .in { max-width: 880px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 10px; align-items: center; }
+  .bar img { height: 28px; }
+  .bar b { flex: 1; font-size: 15px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 14px; text-decoration: none; color: #fff; background: var(--grad); border: 0; cursor: pointer; white-space: nowrap; }
+  .btn.ghost { background: #fff; color: var(--brand); border: 1px solid var(--line); }
+
+  /* cover */
+  .cover { margin: 24px 0; padding: 40px 28px; border-radius: 28px; color: #fff; text-align: center;
+    background: radial-gradient(120% 90% at 10% 0%, #1b2a8a 0%, transparent 60%), radial-gradient(100% 80% at 100% 100%, #4b1490 0%, transparent 60%), var(--navy); }
+  .cover .logo { width: min(420px, 90%); }
+  .cover h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.15; margin: 18px 0 6px; letter-spacing: -.02em; }
+  .cover p { margin: 0; color: #c9d1ff; font-size: 18px; }
+  .cover .meta { margin-top: 22px; font-size: 13px; color: #9aa6e6; }
+  .maker { display: inline-flex; align-items: center; gap: 14px; margin-top: 26px; padding: 12px 18px; border-radius: 18px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); text-align: left; color: #fff; text-decoration: none; }
+  .maker img { width: 46px; height: 46px; border-radius: 50%; }
+  .maker small { display: block; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #9aa6e6; }
+  .maker b { display: block; font-size: 15px; }
+  .maker span { font-size: 12px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* content */
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; padding: 26px 28px; margin: 18px 0; }
+  h2 { font-size: 26px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -.01em; display: flex; gap: 12px; align-items: center; }
+  h2 .n { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; color: #fff; background: var(--grad); font-size: 18px; }
+  h3 { font-size: 19px; margin: 22px 0 6px; }
+  .lead { color: var(--muted); margin: 0 0 14px; font-size: 17px; }
+  ol, ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 5px 0; }
+  .ui { display: inline-block; padding: 0 8px; border-radius: 7px; background: #eef2ff; color: #1d3fbf; font-weight: 700; font-size: .92em; white-space: nowrap; }
+  .tip, .warn { border-radius: 14px; padding: 12px 16px; margin: 14px 0; font-size: 15px; }
+  .tip { background: #e9f8f1; border-left: 5px solid var(--good); }
+  .warn { background: #fff4e0; border-left: 5px solid var(--warn); }
+  .tip b, .warn b { display: block; }
+
+  /* picture + steps side by side */
+  .row { display: grid; grid-template-columns: 250px 1fr; gap: 26px; align-items: start; margin: 18px 0; }
+  .row.r { grid-template-columns: 1fr 250px; }
+  .row.r figure { order: 2; }
+  figure { margin: 0; }
+  .phone { display: block; width: 100%; border-radius: 26px; border: 7px solid #1a1f36; box-shadow: 0 10px 30px rgba(20,26,51,.18); background: #fff; }
+  .wide { display: block; width: 100%; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(20,26,51,.12); }
+  figcaption { font-size: 13px; color: var(--muted); text-align: center; margin-top: 8px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
+  .toc { columns: 2; column-gap: 28px; padding-left: 20px; }
+  .toc li { break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 10px 0; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--soft); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  kbd { font: 700 13px/1 ui-monospace, monospace; padding: 3px 7px; border-radius: 6px; border: 1px solid #c9cfe3; border-bottom-width: 3px; background: #fff; }
+  .dev { display: grid; grid-template-columns: 120px 1fr; gap: 24px; align-items: center; }
+  .dev img { width: 120px; height: 120px; border-radius: 50%; box-shadow: 0 0 0 6px #eef2ff; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 30px; }
+
+  @media (max-width: 680px) {
+    .row, .row.r { grid-template-columns: 1fr; }
+    .row figure, .row.r figure { order: 0; max-width: 260px; margin: 0 auto; }
+    .pair { grid-template-columns: 1fr; }
+    .toc { columns: 1; }
+    .card { padding: 20px 18px; }
+    .dev { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+    .bar b { display: none; }
+  }
+
+  /* -------- print / PDF -------- */
+  @page { size: A4; margin: 13mm 13mm 15mm; }
+  @media print {
+    body { background: #fff; font-size: 11.5pt; }
+    .bar, .no-print { display: none !important; }
+    .page { max-width: none; padding: 0; }
+    .cover { margin: 0; min-height: 268mm; display: flex; flex-direction: column; justify-content: center; border-radius: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .card { border: 0; padding: 0; margin: 0; break-before: page; }
+    .card.keep { break-before: auto; margin-top: 10mm; }
+    .row, .pair, .tip, .warn, table, figure, .dev { break-inside: avoid; }
+    h2, h3 { break-after: avoid; }
+    .row { grid-template-columns: 58mm 1fr; gap: 8mm; }
+    .row.r { grid-template-columns: 1fr 58mm; }
+    .pair { grid-template-columns: 52mm 52mm; justify-content: center; gap: 12mm; }
+    .phone { border-width: 5px; border-radius: 18px; box-shadow: none; }
+    .wide { box-shadow: none; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    a { text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="in">
+    <img src="../brand/moneta-mark-128.webp" alt="" />
+    <b>Moneta User Manual</b>
+    <a class="btn ghost" href="../">Open Moneta</a>
+    <a class="btn" href="Moneta-User-Manual.pdf" download>Download PDF</a>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- ======================= COVER ======================= -->
+<section class="cover">
+  <img class="logo" src="../brand/moneta-banner-dark.webp" alt="Moneta" />
+  <h1>User Manual</h1>
+  <p>A simple, picture-by-picture guide for everyone</p>
+  <a class="maker" href="https://towfiqbinhasan.com">
+    <img src="../brand/th-badge-128.png" alt="TH Team" />
+    <div><small>Designed &amp; developed by</small><b>MD. Towfiq Bin Hasan</b><span>TH Team · towfiqbinhasan.com</span></div>
+  </a>
+  <div class="meta">Moneta v1.3 · Web app and Android app · moneta-th.vercel.app</div>
+</section>
+
+<!-- ======================= CONTENTS ======================= -->
+<section class="card keep">
+  <h2>What's inside</h2>
+  <ol class="toc">
+    <li><a href="#what">What is Moneta?</a></li>
+    <li><a href="#get">Get Moneta (website and Android)</a></li>
+    <li><a href="#setup">First start: set it up in 1 minute</a></li>
+    <li><a href="#home">The Home screen</a></li>
+    <li><a href="#add">Add money in or out</a></li>
+    <li><a href="#list">See all your entries</a></li>
+    <li><a href="#reports">Reports</a></li>
+    <li><a href="#more">The "More" menu</a></li>
+    <li><a href="#accounts">Accounts (Cash, Bank, bKash…)</a></li>
+    <li><a href="#categories">Categories</a></li>
+    <li><a href="#budgets">Budgets</a></li>
+    <li><a href="#goals">Savings goals</a></li>
+    <li><a href="#debts">Debts &amp; loans</a></li>
+    <li><a href="#split">Split bills</a></li>
+    <li><a href="#bills">Bill reminders</a></li>
+    <li><a href="#recurring">Repeating entries &amp; templates</a></li>
+    <li><a href="#trips">Trips &amp; events</a></li>
+    <li><a href="#settings">Settings</a></li>
+    <li><a href="#sync">Sign in &amp; use on many devices</a></li>
+    <li><a href="#data">Where your data is kept</a></li>
+    <li><a href="#computer">Using Moneta on a computer</a></li>
+    <li><a href="#help">Questions &amp; problems</a></li>
+    <li><a href="#developer">About the developer</a></li>
+  </ol>
+</section>
+
+<!-- ======================= 1 ======================= -->
+<section class="card" id="what">
+  <h2><span class="n">1</span>What is Moneta?</h2>
+  <p class="lead">Moneta is a money diary. You write down what you spend and what you earn, and Moneta shows you where your money goes.</p>
+  <ul>
+    <li><b>Add a spend in seconds</b>, for example "Lunch ৳250", with a big number pad.</li>
+    <li><b>See your totals</b>: how much you have, and what you spent today, this week and this month.</li>
+    <li><b>Plan</b> with budgets ("max ৳2,500 for fun this month") and savings goals ("new laptop").</li>
+    <li><b>Never forget</b> bills, loans and money friends owe you.</li>
+    <li><b>Any currency</b>: Taka, Rupee, Dollar, Euro and many more, even mixed together.</li>
+    <li><b>Works without internet.</b> Your data stays on your phone unless you choose to sign in.</li>
+  </ul>
+  <div class="tip"><b>Good to know</b>The pictures in this manual use sample ("demo") data and the Taka (৳) currency. Your screen shows your own numbers.</div>
+</section>
+
+<!-- ======================= 2 ======================= -->
+<section class="card" id="get">
+  <h2><span class="n">2</span>Get Moneta</h2>
+  <p class="lead">Use it in a web browser, or install the Android app. Both look and work the same.</p>
+
+  <h3>Option A: Website (any phone or computer)</h3>
+  <ol>
+    <li>Open <a href="https://moneta-th.vercel.app"><b>moneta-th.vercel.app</b></a> in Chrome, Edge, Safari or Firefox.</li>
+    <li>That's it. To keep it like an app, use the browser menu → <span class="ui">Install app</span> or <span class="ui">Add to Home screen</span>.</li>
+  </ol>
+
+  <h3>Option B: Android app (APK)</h3>
+  <ol>
+    <li>On your Android phone, open the website and tap <span class="ui">Download</span> on the "Get Moneta for Android" banner. You can also go to <b>Settings → Download Android app (APK)</b>, or use this link:<br />
+      <a href="https://github.com/towfiqbinhasan/Moneta/releases/latest/download/Moneta.apk">github.com/towfiqbinhasan/Moneta/releases/latest</a></li>
+    <li>Open the downloaded file <b>Moneta.apk</b>.</li>
+    <li>If Android says <i>"For your security, your phone is not allowed to install unknown apps"</i>, tap <span class="ui">Settings</span>, turn on <span class="ui">Allow from this source</span>, then go back.</li>
+    <li>Tap <span class="ui">Install</span>, then <span class="ui">Open</span>.</li>
+  </ol>
+
+  <h3>Updating the Android app</h3>
+  <ul>
+    <li>When a new version is out, a blue bar appears at the top: <span class="ui">New version available</span>. Tap <span class="ui">Update</span>, then <span class="ui">Install</span>.</li>
+    <li>You can check yourself any time: <b>Settings → scroll to the bottom → Check for updates</b>.</li>
+    <li>Updating keeps all your data.</li>
+  </ul>
+  <div class="warn"><b>Only download from the links above</b>Moneta APKs from other places may be fake.</div>
+</section>
+
+<!-- ======================= 3 ======================= -->
+<section class="card" id="setup">
+  <h2><span class="n">3</span>First start: set it up in 1 minute</h2>
+  <p class="lead">The first time you open Moneta, it asks 4 short questions.</p>
+
+  <div class="row">
+    <figure><img class="phone" src="img/01-welcome.jpg" alt="Choose language" /><figcaption>Step 1: language</figcaption></figure>
+    <div>
+      <h3>Step 1: Choose your language</h3>
+      <p>Tap <b>English</b>, <b>বাংলা</b>, Deutsch, Norsk or हिन्दी, then tap <span class="ui">Continue</span>. You can change it later.</p>
+      <p><b>Already used Moneta on another device?</b> Tap <span class="ui">Already have an account?</span> and sign in. Your data comes back and setup is skipped.</p>
+      <p>On the website you also see <span class="ui">Get Moneta for Android</span> here.</p>
+    </div>
+  </div>
+
+  <div class="pair">
+    <figure><img class="phone" src="img/02-country.jpg" alt="Choose country" /><figcaption>Step 2: country</figcaption></figure>
+    <figure><img class="phone" src="img/03-currency.jpg" alt="Choose currency" /><figcaption>Step 3: money format</figcaption></figure>
+  </div>
+  <h3>Step 2: Your country</h3>
+  <p>Type your country (for example <b>Bangladesh</b>) and tap it. Moneta then picks your currency and date style for you.</p>
+  <h3>Step 3: How money looks</h3>
+  <p>The big preview shows how amounts will look. Choose how numbers are grouped (<b>12,34,567</b> is the lakh style used in Bangladesh and India) and the digits (<b>123</b> or <b>১২৩</b>). Tap <span class="ui">Continue</span>.</p>
+
+  <div class="row">
+    <figure><img class="phone" src="img/04-start.jpg" alt="Finish setup" /><figcaption>Step 4: make it yours</figcaption></figure>
+    <div>
+      <h3>Step 4: Make it yours</h3>
+      <ol>
+        <li>Type your <b>name</b>. It is used in the greeting.</li>
+        <li>Pick a <b>style</b> (Receipt, Glass or Brutal). It only changes the look.</li>
+        <li>Pick a <b>category set</b>: Standard, Student, Family, South Asia or Freelancer.</li>
+        <li><b>Load demo data</b>: turn this on only if you want to try Moneta with sample entries. You can remove them later (see <a href="#settings">Settings</a>).</li>
+        <li>Tap <span class="ui">Start using Moneta</span>.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 4 ======================= -->
+<section class="card" id="home">
+  <h2><span class="n">4</span>The Home screen</h2>
+  <p class="lead">Everything important on one screen.</p>
+  <div class="row">
+    <figure><img class="phone" src="img/05-home.jpg" alt="Home screen" /><figcaption>Home</figcaption></figure>
+    <div>
+      <ol>
+        <li><b>Top:</b> greeting and today's date. The 3 small buttons change the <b>style</b>, switch <b>light/dark</b>, and <b>choose what Home shows</b>.</li>
+        <li><b>Total balance:</b> all your money together. Below it is the income and expense for this month, and each account (Cash, Bank…). Swipe the accounts sideways to see more.</li>
+        <li><b>Quick buttons:</b> <span class="ui">Expense</span>, <span class="ui">Income</span>, <span class="ui">Transfer</span>, <span class="ui">Goals</span>.</li>
+        <li><b>Today / This week / This month:</b> how much you spent.</li>
+        <li><b>Needs attention:</b> budgets that are almost used up, bills due soon, and money due from people.</li>
+        <li><b>Budgets</b> and more cards below. Scroll down.</li>
+      </ol>
+      <h3>The bottom bar</h3>
+      <p><b>Home</b> · <b>Transactions</b> · the big <b>+</b> button (add an entry) · <b>Reports</b> · <b>More</b></p>
+    </div>
+  </div>
+  <div class="row r">
+    <figure><img class="phone" src="img/06-home-more.jpg" alt="More of the home screen" /><figcaption>Scroll down for more</figcaption></figure>
+    <div>
+      <h3>Further down</h3>
+      <ul>
+        <li><b>Spending by category</b> (which kinds of things cost you most).</li>
+        <li><b>Charts</b> of the last days and months.</li>
+        <li><b>This month vs last month</b> and simple tips.</li>
+        <li><b>Health score</b>: a 0–100 score for how well this month is going.</li>
+        <li><b>Goals</b> and your <b>recent entries</b>.</li>
+      </ul>
+      <div class="tip"><b>Tip</b>Don't need a card? Tap the sliders button at the top of Home (or <b>Settings → Dashboard widgets</b>) to hide it or move it.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 5 ======================= -->
+<section class="card" id="add">
+  <h2><span class="n">5</span>Add money in or out</h2>
+  <p class="lead">This is what you will do most. It takes about 5 seconds.</p>
+  <div class="row">
+    <figure><img class="phone" src="img/07-add.jpg" alt="Add entry" /><figcaption>Add entry</figcaption></figure>
+    <div>
+      <ol>
+        <li>Tap the big blue <b>+</b> at the bottom.</li>
+        <li>Choose at the top: <span class="ui">Expense</span> (money out), <span class="ui">Income</span> (money in) or <span class="ui">Transfer</span> (moving money between your own accounts, for example Bank → Cash).</li>
+        <li>Type the <b>amount</b> on the number pad. You can even calculate: <b>120 + 80</b>.</li>
+        <li>Tap a <b>category</b> such as Food or Transport.</li>
+        <li>Tap <span class="ui">Save</span>. Done!</li>
+      </ol>
+      <h3>Extra options</h3>
+      <ul>
+        <li><b>Account:</b> choose Cash, Bank, bKash… (Moneta remembers your last one).</li>
+        <li><b>Currency:</b> tap <span class="ui">৳ BDT</span> to enter another currency.</li>
+        <li><b>Date, note, #tags, receipt photo</b>: open the details part below the categories.</li>
+        <li><b>Repeat</b> (for example every month) and <b>Save as template</b>.</li>
+        <li><b>Templates</b> (the ☆ chips like "Coffee ৳300") fill everything with one tap.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tip"><b>Made a mistake?</b>After saving, tap <span class="ui">Undo</span> on the message at the bottom. To change an entry later, tap it in the list. To delete it, open it and tap the bin, or swipe it to the left.</div>
+</section>
+
+<!-- ======================= 6 ======================= -->
+<section class="card" id="list">
+  <h2><span class="n">6</span>See all your entries</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/08-transactions.jpg" alt="Transactions" /><figcaption>Transactions</figcaption></figure>
+    <div>
+      <p class="lead">Tap <b>Transactions</b> in the bottom bar.</p>
+      <ul>
+        <li>Entries are grouped by day, newest first.</li>
+        <li><b>Search</b> by note, tag or category, or use the <b>filter</b> button (date, account, category, amount…).</li>
+        <li><b>Tap</b> an entry to see or change it.</li>
+        <li><b>Swipe left</b> to delete (you can Undo). <b>Swipe right</b> to copy it as a new entry.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 7 ======================= -->
+<section class="card" id="reports">
+  <h2><span class="n">7</span>Reports</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/09-reports.jpg" alt="Reports" /><figcaption>Reports</figcaption></figure>
+    <div>
+      <p class="lead">Tap <b>Reports</b> in the bottom bar to understand your money.</p>
+      <ol>
+        <li>Choose <b>Daily, Weekly, Monthly, Yearly</b> or <b>Custom</b>.</li>
+        <li>Use <b>‹ ›</b> to move to the previous or next period.</li>
+        <li>See <b>Income, Expense</b> and <b>Net</b> (what is left).</li>
+        <li><b>Insights</b> explain the numbers in plain words, like "You spent 9% less than last month".</li>
+        <li>Charts and a list by category are below.</li>
+        <li><span class="ui">Calendar</span> at the top shows each day's spending as colours.</li>
+      </ol>
+      <p>You can also <b>export</b> a report as <b>PDF, Excel or CSV</b> to print or share.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 8 ======================= -->
+<section class="card" id="more">
+  <h2><span class="n">8</span>The "More" menu</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/10-more.jpg" alt="More menu" /><figcaption>More</figcaption></figure>
+    <div>
+      <p class="lead">Tap <b>More</b> (bottom right) to reach every other part of Moneta.</p>
+      <table>
+        <tr><th>Item</th><th>What it is for</th></tr>
+        <tr><td>Accounts</td><td>Your wallets and bank accounts</td></tr>
+        <tr><td>Categories</td><td>The kinds of spending and income</td></tr>
+        <tr><td>Budgets</td><td>Spending limits</td></tr>
+        <tr><td>Savings goals</td><td>Money you are saving up</td></tr>
+        <tr><td>Debts &amp; loans</td><td>Money you owe, or that is owed to you</td></tr>
+        <tr><td>Split bills</td><td>Share a bill with friends</td></tr>
+        <tr><td>Bill reminders</td><td>Rent, electricity, internet…</td></tr>
+        <tr><td>Recurring &amp; templates</td><td>Entries that repeat by themselves</td></tr>
+        <tr><td>Trips &amp; events</td><td>Spending for a trip or a wedding</td></tr>
+        <tr><td>Settings</td><td>Language, look, lock, backup, sign-in</td></tr>
+        <tr><td>Language editor</td><td>Change any text, or add a language</td></tr>
+        <tr><td>User manual</td><td>This guide</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 9 ======================= -->
+<section class="card" id="accounts">
+  <h2><span class="n">9</span>Accounts</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/11-accounts.jpg" alt="Accounts" /><figcaption>Accounts</figcaption></figure>
+    <div>
+      <p class="lead">An account is any place you keep money: Cash, a bank, a card, bKash, Nagad, PayPal…</p>
+      <ol>
+        <li>Go to <b>More → Accounts</b>.</li>
+        <li>Tap <span class="ui">+ Add</span>, type a name, pick a type, currency, icon and colour.</li>
+        <li><b>Opening balance:</b> how much is in it right now. Moneta adds and subtracts from there.</li>
+      </ol>
+      <ul>
+        <li>Tap an account to change it.</li>
+        <li><b>Archive</b> an account you don't use any more. Its history stays.</li>
+        <li>The <b>total</b> at the top is all accounts together, in your main currency.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 10 ======================= -->
+<section class="card" id="categories">
+  <h2><span class="n">10</span>Categories</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/12-categories.jpg" alt="Categories" /><figcaption>Categories</figcaption></figure>
+    <div>
+      <p class="lead">Categories are the kinds of spending (Food, Rent…) and income (Salary…).</p>
+      <ul>
+        <li><b>Add:</b> tap <span class="ui">+ Add</span>, give a name, icon and colour.</li>
+        <li><b>Sub-category:</b> choose a "parent", for example Food → Restaurant.</li>
+        <li><b>Rename, recolour or delete:</b> tap a category.</li>
+        <li><b>Change the order:</b> use the arrows.</li>
+        <li><span class="ui">Load a category set</span> adds a ready-made set (Student, Family…).</li>
+      </ul>
+      <div class="tip"><b>Deleting is safe</b>Entries in a deleted category are kept. They become "Uncategorised", or move to the parent category.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 11 ======================= -->
+<section class="card" id="budgets">
+  <h2><span class="n">11</span>Budgets</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/13-budgets.jpg" alt="Budgets" /><figcaption>Budgets</figcaption></figure>
+    <div>
+      <p class="lead">A budget is a spending limit, for example "Food: ৳8,000 per month".</p>
+      <ol>
+        <li>Go to <b>More → Budgets → + Add</b>.</li>
+        <li>Choose <b>how often</b> (daily, weekly, monthly, yearly), the <b>amount</b>, and <b>which categories</b>. Leave categories empty for an <b>overall</b> budget.</li>
+        <li>Save.</li>
+      </ol>
+      <ul>
+        <li><b style="color:var(--good)">Green</b> = fine, <b style="color:var(--warn)">yellow</b> = near the limit, <b style="color:#c62828">red</b> = over.</li>
+        <li>Moneta tells you <b>how much you can still spend per day</b>.</li>
+        <li><b>Rollover:</b> money you did not use is added to next month.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 12 ======================= -->
+<section class="card" id="goals">
+  <h2><span class="n">12</span>Savings goals</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/14-goals.jpg" alt="Savings goals" /><figcaption>Savings goals</figcaption></figure>
+    <div>
+      <p class="lead">Save for something: a laptop, an emergency fund, Eid shopping…</p>
+      <ol>
+        <li><b>More → Savings goals → + Add</b>. Enter the name, target amount and (optional) the date you want it by. You can add a picture.</li>
+        <li>When you put money aside, tap <span class="ui">+ Add / withdraw</span> on the goal.</li>
+      </ol>
+      <ul>
+        <li>The ring shows how far you are (for example 54%).</li>
+        <li>Moneta tells you <b>how much to save per day</b> to make it in time, and <b>when you will reach it</b> at your current speed.</li>
+        <li>You get a small celebration at 25%, 50%, 75% and 100%. 🎉</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 13 ======================= -->
+<section class="card" id="debts">
+  <h2><span class="n">13</span>Debts &amp; loans</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/15-debts.jpg" alt="Debts" /><figcaption>Debts &amp; loans</figcaption></figure>
+    <div>
+      <p class="lead">Keep track of money you lent or borrowed.</p>
+      <ul>
+        <li>Two tabs: <b>Owed to me</b> (people owe you) and <b>I owe</b>.</li>
+        <li><b>+ Add:</b> person, amount, due date, note. Turn on <b>Remind me</b> to get a reminder near the due date.</li>
+        <li>When someone pays back (all or part), open it and tap <span class="ui">Record payment</span>.</li>
+        <li>When everything is paid, it is hidden from the list. Tap <span class="ui">Show settled</span> to see it again.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 14 ======================= -->
+<section class="card" id="split">
+  <h2><span class="n">14</span>Split bills</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/16-split.jpg" alt="Split bills" /><figcaption>Split bills</figcaption></figure>
+    <div>
+      <p class="lead">Paid for dinner with friends? Split it fairly.</p>
+      <ol>
+        <li><b>More → Split bills → + Add</b>.</li>
+        <li>Enter a title and the total, and add each person.</li>
+        <li>Choose <span class="ui">Split equally</span> or <span class="ui">Custom amounts</span> (type each person's share).</li>
+        <li>Tick who has <b>already paid</b>.</li>
+        <li>Keep <span class="ui">Add unpaid shares to "Owed to me"</span> on, and everyone who has not paid is added to <a href="#debts">Debts</a> automatically.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 15 ======================= -->
+<section class="card" id="bills">
+  <h2><span class="n">15</span>Bill reminders</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/17-bills.jpg" alt="Bill reminders" /><figcaption>Bill reminders</figcaption></figure>
+    <div>
+      <p class="lead">Never miss rent, electricity, internet or school fees.</p>
+      <ol>
+        <li><b>More → Bill reminders → + Add</b>: name, amount, due date and how often it repeats.</li>
+        <li>Bills due soon appear on <b>Home → Needs attention</b>.</li>
+        <li>When you pay, tap <span class="ui">Paid</span>. Moneta adds the expense for you and moves the due date to the next month.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 16 ======================= -->
+<section class="card" id="recurring">
+  <h2><span class="n">16</span>Repeating entries &amp; templates</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/18-recurring.jpg" alt="Recurring" /><figcaption>Recurring &amp; templates</figcaption></figure>
+    <div>
+      <p class="lead">Let Moneta add regular entries for you.</p>
+      <ul>
+        <li><b>Recurring:</b> salary, rent, subscriptions… When adding an entry, choose <b>Repeat</b> (daily, weekly, monthly, yearly). Moneta then adds it by itself on each date, even if you did not open the app that day.</li>
+        <li>Here you can <b>pause</b> (⏸), <b>edit</b> or <b>delete</b> a repeating entry.</li>
+        <li><b>Templates:</b> saved entries (like "Bus ৳150"). They appear as ☆ chips when you add an entry. One tap fills everything in.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 17 ======================= -->
+<section class="card" id="trips">
+  <h2><span class="n">17</span>Trips &amp; events</h2>
+  <div class="row">
+    <figure><img class="phone" src="img/19-trips.jpg" alt="Trips" /><figcaption>Trips &amp; events</figcaption></figure>
+    <div>
+      <p class="lead">Going on a trip, or planning a wedding? Keep its spending together.</p>
+      <ol>
+        <li><b>More → Trips &amp; events → + Add</b>: name, currency (for example Thai Baht), budget and dates.</li>
+        <li>Tap <span class="ui">Start trip mode</span>. While a trip is on, a coloured bar shows at the top, and every new entry belongs to the trip and uses its currency.</li>
+        <li>See the trip's total, and how it compares to the budget.</li>
+        <li>Tap <span class="ui">Stop trip mode</span> when you are home.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 18 ======================= -->
+<section class="card" id="settings">
+  <h2><span class="n">18</span>Settings</h2>
+  <p class="lead">Go to <b>More → Settings</b>. Here are the parts most people use.</p>
+  <div class="row">
+    <figure><img class="phone" src="img/20-settings.jpg" alt="Settings" /><figcaption>Settings: top</figcaption></figure>
+    <div>
+      <h3>Language</h3>
+      <p>Change the language any time. Bangla, Hindi, German and Norwegian are included.</p>
+      <h3>Currency &amp; format</h3>
+      <p>Your <b>main currency</b>, the number style (lakh or million), the date format, the first day of the week, and the <b>month start day</b> (useful if your salary comes on the 25th).</p>
+      <h3>Exchange rates</h3>
+      <p>Moneta gets today's rates from the internet to convert other currencies. You can type your own rate too.</p>
+    </div>
+  </div>
+  <div class="pair">
+    <figure><img class="phone" src="img/21-settings-look.jpg" alt="Appearance" /><figcaption>Look, profile and dashboard</figcaption></figure>
+    <figure><img class="phone" src="img/22-settings-lock.jpg" alt="Security and reminders" /><figcaption>App lock and reminders</figcaption></figure>
+  </div>
+  <ul>
+    <li><b>Appearance:</b> style (Receipt / Glass / Brutal), Light, Dark or Auto, and your favourite colour.</li>
+    <li><b>Profile:</b> your name and photo.</li>
+    <li><b>Dashboard widgets:</b> show, hide and reorder the cards on Home.</li>
+    <li><b>App lock:</b> ask for a <b>PIN</b> (4–6 digits; fingerprint or face also works if your device supports it) every time Moneta opens. Choose a PIN you will remember!</li>
+    <li><b>Daily reminder:</b> a notification at your chosen time if you have not added anything that day.</li>
+  </ul>
+  <div class="row">
+    <figure><img class="phone" src="img/23-settings-data.jpg" alt="Backup and data" /><figcaption>Backup &amp; data</figcaption></figure>
+    <div>
+      <h3>Backup &amp; data</h3>
+      <table>
+        <tr><th>Button</th><th>What it does</th></tr>
+        <tr><td>Backup (JSON)</td><td>Saves <b>everything</b> into one file. Keep it on Google Drive or your computer.</td></tr>
+        <tr><td>Restore</td><td>Brings back a backup file. It <b>replaces</b> the current data.</td></tr>
+        <tr><td>Export all (CSV)</td><td>All entries as a spreadsheet (Excel, Google Sheets).</td></tr>
+        <tr><td>Import CSV</td><td>Bring in entries from a bank statement or another app.</td></tr>
+        <tr><td>Load demo data</td><td>Adds 3 months of sample entries to try the app.</td></tr>
+        <tr><td>Remove demo data</td><td>Removes <b>only</b> the sample entries. Your own entries stay.</td></tr>
+        <tr><td>Delete all data</td><td>Erases everything on this device. You must type DELETE to confirm.</td></tr>
+      </table>
+      <div class="warn"><b>Make a backup first</b>"Delete all data" and "Restore" cannot be undone.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 19 ======================= -->
+<section class="card" id="sync">
+  <h2><span class="n">19</span>Sign in &amp; use on many devices</h2>
+  <p class="lead">Signing in is <b>optional</b>. Do it if you want a safe copy in the cloud, or want the same data on your phone and computer.</p>
+  <div class="pair">
+    <figure><img class="phone" src="img/24-settings-sync.jpg" alt="Cloud sync" /><figcaption>Settings → Cloud sync</figcaption></figure>
+    <figure><img class="phone" src="img/25-signin.jpg" alt="Sign in" /><figcaption>Sign in / create account</figcaption></figure>
+  </div>
+  <ol>
+    <li>Go to <b>Settings → Cloud sync</b> and tap <span class="ui">Sign in</span>.</li>
+    <li>New here? Tap <span class="ui">Create account</span> and enter your name, e-mail and a password. Then open the e-mail Moneta sends you and tap the link to confirm.</li>
+    <li>Already have an account? Enter your e-mail and password and tap <span class="ui">Sign in</span>, or use <b>Google</b> if you see that button.</li>
+    <li>On your other phone or computer, sign in with the <b>same account</b>. Your data appears there too, and every change shows up on all devices within seconds.</li>
+  </ol>
+  <ul>
+    <li><b>Forgot your password?</b> Tap <span class="ui">Forgot password?</span> and follow the e-mail.</li>
+    <li><b>Sync status</b> shows at the top (computer) and in Settings: <i>Synced</i>, <i>Syncing…</i> or <i>Offline</i>. Offline is fine: changes are sent when the internet is back.</li>
+    <li><b>Sign out:</b> tap your picture → <span class="ui">Sign out</span>. You choose to <b>keep</b> the data on this device or <b>remove</b> it (use "remove" on a shared computer).</li>
+  </ul>
+</section>
+
+<!-- ======================= 20 ======================= -->
+<section class="card" id="data">
+  <h2><span class="n">20</span>Where your data is kept</h2>
+  <table>
+    <tr><th>If you…</th><th>Your data is kept…</th></tr>
+    <tr><td>do <b>not</b> sign in</td><td>only <b>on this phone or in this browser</b>. Nobody else can see it, and it works without internet. If you uninstall the app or clear the browser data, it is gone, so make a <b>Backup</b>.</td></tr>
+    <tr><td><b>sign in</b></td><td>on your device <b>and</b> in your private cloud account. Only you can read it. A new phone gets everything back when you sign in.</td></tr>
+  </table>
+  <h3>Keep your money diary safe</h3>
+  <ul>
+    <li>Make a <b>Backup</b> about once a month, or sign in.</li>
+    <li>Turn on <b>App lock</b> if other people use your phone.</li>
+    <li>Moneta never asks for your bank password or card number. It only stores what you type into it.</li>
+  </ul>
+</section>
+
+<!-- ======================= 21 ======================= -->
+<section class="card" id="computer">
+  <h2><span class="n">21</span>Using Moneta on a computer</h2>
+  <p class="lead">On a big screen Moneta shows a menu on the left and more cards side by side.</p>
+  <figure><img class="wide" src="img/26-desktop.jpg" alt="Moneta on a computer" /><figcaption>Moneta on a laptop or desktop</figcaption></figure>
+  <ul>
+    <li><b>Search box at the top</b> (or press <kbd>Ctrl</kbd> + <kbd>K</kbd>): jump to any page or find any entry.</li>
+    <li><b>Drag &amp; drop</b> a CSV file to import it, a backup file to restore it, or a photo to attach it as a receipt.</li>
+    <li>In <b>Transactions</b> you get a table: click the column names to sort, tick many rows to change or delete them at once.</li>
+  </ul>
+  <table>
+    <tr><th>Key</th><th>Does</th><th>Key</th><th>Does</th></tr>
+    <tr><td><kbd>N</kbd></td><td>New expense</td><td><kbd>D</kbd></td><td>Dark / light mode</td></tr>
+    <tr><td><kbd>I</kbd></td><td>New income</td><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Search &amp; commands</td></tr>
+    <tr><td><kbd>T</kbd></td><td>New transfer</td><td><kbd>?</kbd></td><td>Show all shortcuts</td></tr>
+    <tr><td><kbd>G</kbd> then <kbd>H</kbd></td><td>Go Home</td><td><kbd>Esc</kbd></td><td>Close a window</td></tr>
+  </table>
+  <div class="row">
+    <figure><img class="phone" src="img/27-dark.jpg" alt="Dark mode" /><figcaption>Dark mode</figcaption></figure>
+    <div>
+      <h3>Dark mode</h3>
+      <p>Easier on the eyes at night. Tap the sun/moon button at the top of Home, or choose <b>Settings → Appearance → Dark</b>. <b>Auto</b> follows your phone's setting.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 22 ======================= -->
+<section class="card" id="help">
+  <h2><span class="n">22</span>Questions &amp; problems</h2>
+  <table>
+    <tr><th>Question</th><th>Answer</th></tr>
+    <tr><td>Do I need internet?</td><td>No. Moneta works offline. Internet is only needed for signing in, syncing, exchange rates and updates.</td></tr>
+    <tr><td>Is it free?</td><td>Yes.</td></tr>
+    <tr><td>I added something wrong.</td><td>Tap the entry in <b>Transactions</b>, fix it and save. Or delete it (swipe left).</td></tr>
+    <tr><td>My balance looks wrong.</td><td>Check the <b>opening balance</b> of each account (<b>More → Accounts</b>), and that transfers go between the right accounts.</td></tr>
+    <tr><td>How do I remove the sample data?</td><td><b>Settings → Backup &amp; data → Remove demo data</b>.</td></tr>
+    <tr><td>I forgot my App lock PIN.</td><td>If you are signed in, reinstall the app (or clear the site data) and sign in again. Your data comes back from the cloud. If you are not signed in, the data cannot be opened without the PIN, so choose one you remember.</td></tr>
+    <tr><td>Reminders don't show.</td><td>Allow notifications for Moneta in your phone's settings. In a browser, reminders only come while Moneta is open.</td></tr>
+    <tr><td>The Android app won't install.</td><td>Allow "Install unknown apps" for your browser or Files app (see <a href="#get">section 2</a>).</td></tr>
+    <tr><td>I have a new phone.</td><td>If you are signed in, just sign in on the new phone. If not, make a <b>Backup</b> on the old phone and <b>Restore</b> it on the new one.</td></tr>
+    <tr><td>Data is missing on my other device.</td><td>Make sure both are signed in to the <b>same</b> account and connected to the internet. Then tap <b>Settings → Cloud sync → Sync now</b>.</td></tr>
+  </table>
+</section>
+
+<!-- ======================= 23 ======================= -->
+<section class="card" id="developer">
+  <h2><span class="n">23</span>About the developer</h2>
+  <div class="dev">
+    <img src="../brand/th-badge-256.png" alt="TH Team logo" />
+    <div>
+      <p class="lead" style="margin-bottom:6px">Moneta is designed and developed by</p>
+      <p style="font-size:24px;font-weight:800;margin:0">MD. Towfiq Bin Hasan</p>
+      <p style="margin:2px 0 12px;font-weight:700;color:var(--brand)">TH Team</p>
+      <table>
+        <tr><td style="width:110px"><b>Website</b></td><td><a href="https://towfiqbinhasan.com">towfiqbinhasan.com</a></td></tr>
+        <tr><td><b>Moneta online</b></td><td><a href="https://moneta-th.vercel.app">moneta-th.vercel.app</a></td></tr>
+        <tr><td><b>Android app</b></td><td><a href="https://github.com/towfiqbinhasan/Moneta/releases/latest">github.com/towfiqbinhasan/Moneta/releases</a></td></tr>
+        <tr><td><b>Source code</b></td><td><a href="https://github.com/towfiqbinhasan/Moneta">github.com/towfiqbinhasan/Moneta</a></td></tr>
+      </table>
+      <p>Found a problem, or have an idea? Get in touch through the website above.</p>
+    </div>
+  </div>
+  <footer>Moneta · Expense &amp; Budget Tracker · © 2026 MD. Towfiq Bin Hasan · TH Team</footer>
+</section>
+
+</div>
+<script>
+  // Inside the Android app the WebView can't download files: the app's "User manual (PDF)" button shares it instead.
+  if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    document.querySelectorAll('a[download]').forEach(function (a) { a.style.display = 'none'; });
+    document.querySelectorAll('a[href="../"]').forEach(function (a) { a.textContent = '← Back to Moneta'; });
+  }
+</script>
+</body>
+</html>

@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bell, ChevronRight, HandCoins, Languages, PiggyBank, Plane, Repeat, Settings, Shapes, Target, Users, Wallet } from 'lucide-react';
+import { Bell, BookOpen, ChevronRight, FileDown, HandCoins, Languages, PiggyBank, Plane, Repeat, Settings, Shapes, Target, Users, Wallet } from 'lucide-react';
 import { Card, IconTile, PageHeader } from '@/components/ui';
 import { AccountCard } from '@/components/Account';
 import { BrandBanner, MadeBy } from '@/components/Brand';
+import { getManualPdf, openManual } from '@/lib/manual';
 
 export function MorePage() {
   const { t } = useTranslation();
@@ -42,6 +43,18 @@ export function MorePage() {
             ))}
           </Card>
         ))}
+        <Card className="!p-1.5">
+          <button onClick={openManual} className="flex w-full items-center gap-3 rounded-2xl px-2 py-2.5 text-start hover:bg-ink/5">
+            <IconTile color="#2563ff" size={38}><BookOpen size={19} /></IconTile>
+            <span className="flex-1 font-medium">{t('manual.title')}</span>
+            <ChevronRight size={18} className="text-muted rtl:rotate-180" />
+          </button>
+          <button onClick={() => getManualPdf()} className="flex w-full items-center gap-3 rounded-2xl px-2 py-2.5 text-start hover:bg-ink/5">
+            <IconTile color="#8b2cf5" size={38}><FileDown size={19} /></IconTile>
+            <span className="flex-1 font-medium">{t('manual.pdf')}</span>
+            <ChevronRight size={18} className="text-muted rtl:rotate-180" />
+          </button>
+        </Card>
       </div>
       <BrandBanner className="mx-auto mt-8 w-56 opacity-90" />
       <MadeBy coBrand className="mx-auto mt-4 w-fit" />

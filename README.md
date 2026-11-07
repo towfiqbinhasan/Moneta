@@ -22,6 +22,13 @@ npm run preview      # serve the production build (http://localhost:4173)
 The first launch opens a setup wizard (language → country → main currency → categories).
 Turn on **Load demo data** to explore the app with 3 months of sample entries. **Settings → Data → Remove demo data** deletes only the sample entries later (your own entries stay).
 
+## User manual
+
+A simple-English guide with screenshots for non-technical users:
+- **In the app:** More → *User manual* (opens offline) and *User manual (PDF)*. Also in Settings → About.
+- **Online:** [moneta-th.vercel.app/manual/index.html](https://moneta-th.vercel.app/manual/index.html) · [PDF](https://moneta-th.vercel.app/manual/Moneta-User-Manual.pdf)
+- **Source:** `public/manual/index.html` (one page, prints to PDF). Run `npm run manual` to retake every screenshot with demo data (`scripts/manual/shots.mjs`, needs Google Chrome) and rebuild the PDF (`scripts/manual/pdf.mjs`).
+
 ## Features
 
 | Area | What's included |
