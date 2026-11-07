@@ -14,11 +14,11 @@
     --grad: linear-gradient(120deg, var(--cyan), var(--brand) 45%, var(--brand2));
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body { margin: 0; background: var(--soft); color: var(--ink); font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif; }
-  a { color: var(--brand); }
-  img { max-width: 100%; }
-  .page { max-width: 880px; margin: 0 auto; padding: 0 16px 48px; }
+  html { -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+  body { margin: 0; background: var(--soft); color: var(--ink); font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif; overflow-x: hidden; }
+  a { color: var(--brand); word-break: break-word; overflow-wrap: anywhere; }
+  img { max-width: 100%; height: auto; }
+  .page { max-width: 880px; margin: 0 auto; padding: 0 16px 48px; width: 100%; }
 
   /* top bar (screen only) */
   .bar { position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
@@ -66,21 +66,26 @@
   .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
   .toc { columns: 2; column-gap: 28px; padding-left: 20px; }
   .toc li { break-inside: avoid; }
-  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 10px 0; }
-  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 10px 0; table-layout: auto; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; word-break: break-word; overflow-wrap: break-word; }
   th { background: var(--soft); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
   kbd { font: 700 13px/1 ui-monospace, monospace; padding: 3px 7px; border-radius: 6px; border: 1px solid #c9cfe3; border-bottom-width: 3px; background: #fff; }
-  .dev { display: grid; grid-template-columns: 120px 1fr; gap: 24px; align-items: center; }
+  .dev { display: grid; grid-template-columns: 120px 1fr; gap: 24px; align-items: center; width: 100%; }
   .dev img { width: 120px; height: 120px; border-radius: 50%; box-shadow: 0 0 0 6px #eef2ff; }
-  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 30px; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 30px; word-break: break-word; }
 
   @media (max-width: 680px) {
+    .page { padding: 0 10px 36px; }
+    .cover { padding: 32px 16px; border-radius: 20px; }
     .row, .row.r { grid-template-columns: 1fr; }
     .row figure, .row.r figure { order: 0; max-width: 260px; margin: 0 auto; }
     .pair { grid-template-columns: 1fr; }
     .toc { columns: 1; }
-    .card { padding: 20px 18px; }
+    .card { padding: 18px 14px; border-radius: 18px; }
     .dev { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+    .dev table { width: 100%; text-align: left; table-layout: fixed; }
+    .dev table tr { display: flex; flex-direction: column; padding: 6px 0; border-bottom: 1px solid var(--line); }
+    .dev table td { width: 100% !important; padding: 2px 0; border: none; word-break: break-word; }
     .bar b { display: none; }
   }
 
@@ -685,10 +690,10 @@
       <p style="font-size:24px;font-weight:800;margin:0">MD. Towfiq Bin Hasan</p>
       <p style="margin:2px 0 12px;font-weight:700;color:var(--brand)">TH Team</p>
       <table>
-        <tr><td style="width:110px"><b>Website</b></td><td><a href="https://towfiqbinhasan.com">towfiqbinhasan.com</a></td></tr>
-        <tr><td><b>Moneta online</b></td><td><a href="https://moneta-th.vercel.app">moneta-th.vercel.app</a></td></tr>
-        <tr><td><b>Android app</b></td><td><a href="https://github.com/towfiqbinhasan/Moneta/releases/latest">github.com/towfiqbinhasan/Moneta/releases</a></td></tr>
-        <tr><td><b>Source code</b></td><td><a href="https://github.com/towfiqbinhasan/Moneta">github.com/towfiqbinhasan/Moneta</a></td></tr>
+        <tr><td style="width:110px"><b>Website</b></td><td><a href="https://towfiqbinhasan.com" target="_blank" rel="noopener">towfiqbinhasan.com</a></td></tr>
+        <tr><td><b>Moneta online</b></td><td><a href="https://moneta-three-wheat.vercel.app" target="_blank" rel="noopener">moneta-three-wheat.vercel.app</a></td></tr>
+        <tr><td><b>Android app</b></td><td><a href="https://github.com/towfiqbinhasan/Moneta/releases/latest" target="_blank" rel="noopener">github.com/towfiqbinhasan/&ZeroWidthSpace;Moneta/releases</a></td></tr>
+        <tr><td><b>Source code</b></td><td><a href="https://github.com/towfiqbinhasan/Moneta" target="_blank" rel="noopener">github.com/towfiqbinhasan/&ZeroWidthSpace;Moneta</a></td></tr>
       </table>
       <p>Found a problem, or have an idea? Get in touch through the website above.</p>
     </div>
