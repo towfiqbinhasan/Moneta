@@ -111,8 +111,8 @@ export function TxTable({ txs }: { txs: Transaction[] }) {
         for (const b of before) {
           const rec = await db.transactions.get(b.id);
           if (rec) {
-            if (b.v === undefined) delete (rec as Record<string, unknown>)[field];
-            else (rec as Record<string, unknown>)[field] = b.v;
+            if (b.v === undefined) delete (rec as unknown as Record<string, unknown>)[field];
+            else (rec as unknown as Record<string, unknown>)[field] = b.v;
             rec.updatedAt = Date.now();
             await db.transactions.put(rec);
           }
